@@ -1,3 +1,4 @@
+import { useStore } from '@nanostores/react'
 import type * as React from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
@@ -8,8 +9,6 @@ import { Codicon } from '@/components/ui/codicon'
 import { useI18n } from '@/i18n'
 import { queryClient } from '@/lib/query-client'
 import { invalidateSlashCompletions } from '@/lib/slash-completion-cache'
-import { useStore } from '@nanostores/react'
-
 import { useStoreSelector } from '@/lib/use-session-slice'
 import { $brandSession, capabilitiesUnlocked } from '@/store/brand-session'
 import { $gateway } from '@/store/gateway'
@@ -204,6 +203,7 @@ export function CapabilitiesView({
     <PageSearchShell
       {...props}
       activeTab={mode}
+      leading={embedded ? undefined : <ReturnToChatButton />}
       onSearchChange={setQuery}
       onTabChange={id => setMode(id as CapabilityMode)}
       // Catalogs keep search beside their results; Connectors owns its field too.
@@ -217,7 +217,6 @@ export function CapabilitiesView({
             : t.skills.searchToolsets
       }
       searchValue={query}
-      leading={embedded ? undefined : <ReturnToChatButton />}
       tabs={[
         { id: 'skills', label: t.skills.tabSkills, meta: skills?.length ?? null },
         { id: 'toolsets', label: t.skills.tabToolsets, meta: toolsets ? visibleToolsetCount(toolsets) : null },

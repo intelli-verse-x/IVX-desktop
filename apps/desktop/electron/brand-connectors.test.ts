@@ -25,6 +25,7 @@ test('merge keeps a website key and a desktop-only key on that brand', () => {
     ],
     { firecrawl: 'fc-brand-only' }
   )
+
   const postiz = merged.find(row => row.connectorId === 'postiz')
   const firecrawl = merged.find(row => row.connectorId === 'firecrawl')
 

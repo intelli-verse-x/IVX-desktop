@@ -24,7 +24,6 @@ import { normalizeExternalUrl, openExternalLink, PrettyLink } from '@/lib/extern
 import { createMemoizedMathPlugin } from '@/lib/katex-memo'
 import { parseMarkdownIntoBlocksCached } from '@/lib/markdown-blocks'
 import { preprocessMarkdown } from '@/lib/markdown-preprocess'
-import { hideVendorNames } from '@/lib/product-names'
 import {
   downloadGatewayMediaFile,
   isFileMediaPath,
@@ -39,6 +38,7 @@ import {
 } from '@/lib/media'
 import { isOnboardingEnabled } from '@/lib/onboarding-enabled'
 import { previewTargetFromMarkdownHref } from '@/lib/preview-targets'
+import { hideVendorNames } from '@/lib/product-names'
 import { remarkSoftBreaks } from '@/lib/remark-soft-breaks'
 import { sessionRefFromMarkdownHref } from '@/lib/session-refs'
 import { isDirectiveInProgress } from '@/lib/transcript-directives'

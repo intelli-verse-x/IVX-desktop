@@ -6,17 +6,16 @@ import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import type { HermesGateway, ProfileScope } from '@/hermes'
 import { useI18n } from '@/i18n'
-import { FREE_LOCK_MESSAGE, freeConnectorAllowed } from '../free-tier'
 import { $brandSession, capabilitiesUnlocked } from '@/store/brand-session'
 import { $freeTierStatus } from '@/store/free-tier'
 import { openFreeTierSignIn } from '@/store/free-tier-sign-in'
 import { notify, notifyError, readableError } from '@/store/notifications'
 
+import { FREE_LOCK_MESSAGE, freeConnectorAllowed } from '../free-tier'
 import { installBundledEntry } from '../mcp/install-catalog-entry'
 import { useMcpServers } from '../mcp/use-mcp-servers'
 
 import { AddServerDialog } from './add-dialog'
-import { DiscordPanel } from './discord-panel'
 import { ConnectorsDirectory } from './connectors-directory'
 import { $abandonedConnects, $accountOperations, abandonConnect, accountOperationFor } from './data/account-operations'
 import { joinBundledEntries, joinLocalServers, pickAccount } from './data/join'
@@ -32,6 +31,7 @@ import {
   hostedCardKey,
   localServerName
 } from './derive'
+import { DiscordPanel } from './discord-panel'
 import { HostedConnectorDialog } from './hosted-dialog'
 import { LocalConnectorDialog } from './local-dialog'
 import { RemoveServerConfirm } from './local-slots'
@@ -266,6 +266,7 @@ export function ConnectorsTab({ gateway, profile }: ConnectorsTabProps) {
 
           if (next && !freeConnectorAllowed(card.slug, unlocked)) {
             notify({ kind: 'info', title: 'Locked', message: FREE_LOCK_MESSAGE })
+
             return
           }
 

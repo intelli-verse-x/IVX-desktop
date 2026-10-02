@@ -53,6 +53,7 @@ export function loginNavigationAction(url: string, signedIn: boolean): LoginNavi
 
   return signedIn ? 'finish' : 'stay'
 }
+
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 
 export interface PortalCookie {

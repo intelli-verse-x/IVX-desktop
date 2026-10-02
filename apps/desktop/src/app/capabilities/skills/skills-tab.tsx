@@ -15,10 +15,10 @@ import { notify, notifyError } from '@/store/notifications'
 import type { SkillInfo } from '@/types/hermes'
 
 import { DetailPane, ListStripMenu, type ListStripMenuToggle } from '../../master-detail'
-import { FREE_LOCK_MESSAGE, freeListAllowed } from '../free-tier'
 import { CatalogAlert } from '../catalog/catalog-alert'
 import { SkillCatalog } from '../catalog/skill-catalog'
 import { UpdateSkillsButton } from '../catalog/update-skills-button'
+import { FREE_LOCK_MESSAGE, freeListAllowed } from '../free-tier'
 
 import { SkillDetail } from './skill-detail'
 import { skillsQueryKey, usageOf } from './skills-data'
