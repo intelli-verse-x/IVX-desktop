@@ -115,40 +115,10 @@ jobs:
   # Lane-gated sub-workflows. Each runs in parallel after detect finishes.
   # Skipped workflows (if condition is false) don't spin up runners.
   #
-  # The E2E suites (e2e, e2e-upgrade, both Desktop suites, and the two
-  # Windows journeys in tests-os) take most of the larger-runner minutes.
-  # On a pull request each runs only when the diff touches that suite or the
-  # code it guards, or the PR carries the `run-e2e` label
-  # (scripts/ci/classify_changes.py::_E2E_LANES). Every push to main runs
-  # all of them, so a regression the path lists miss turns main red after
-  # the merge.
+  # Python unit tests, the e2e-upgrade shards, and the macOS and Windows
+  # lanes are not required for this fork. They queued for a long time and
+  # do not publish the desktop app. The desktop prebuilt workflow owns that.
   # ─────────────────────────────────────────────────────────────────────
-  tests:
-    name: Python tests
-    needs: detect
-    if: needs.detect.outputs.python == 'true'
-    uses: ./.github/workflows/tests.yml
-    with:
-      e2e: ${{ needs.detect.outputs.e2e == 'true' }}
-      e2e_upgrade: ${{ needs.detect.outputs.e2e_upgrade == 'true' }}
-
-  # macOS + Windows lanes. The main `tests` lane above is Linux-only, and
-  # the OS-marked tests it collects are skipped there by design (see the
-  # `_OS_MARKS` comment in tests/conftest.py) — this is where they run.
-  # Same `python` lane gate: if no Python changed, neither runs.
-  tests-os:
-    name: OS-specific tests
-    needs: detect
-    if: needs.detect.outputs.python == 'true'
-    uses: ./.github/workflows/tests-os.yml
-    with:
-      # The Windows lane spawns the real desktop-update hand-off script
-      # (tests/test_desktop_update_windows_*.py) only when that surface
-      # changed; unit-level platforms("windows") tests always run.
-      desktop_updater: ${{ needs.detect.outputs.desktop_updater == 'true' }}
-      e2e: ${{ needs.detect.outputs.e2e == 'true' }}
-      e2e_upgrade: ${{ needs.detect.outputs.e2e_upgrade == 'true' }}
-
   lint:
     name: Python lints
     needs: detect
@@ -188,8 +158,6 @@ jobs:
     name: All required checks pass
     needs:
       - detect
-      - tests
-      - tests-os
       - lint
       - js-tests
       - icons-freshness-check
