@@ -33,12 +33,11 @@ import {
   toggleAgentPlugin,
   updateAgentPlugin
 } from '@/store/agent-plugins'
-import { confirm } from '@/store/confirm'
 import { $brandSession, capabilitiesUnlocked } from '@/store/brand-session'
+import { confirm } from '@/store/confirm'
 import { notify, notifyError } from '@/store/notifications'
 import { openCatalogPluginInstall } from '@/store/plugin-catalog-install'
 import { openPluginInstallRequest } from '@/store/plugin-install-request'
-import { FREE_LOCK_MESSAGE, freeListAllowed } from '../free-tier'
 import { $connection } from '@/store/session'
 
 import { Pill } from '../../settings/primitives'
@@ -46,6 +45,7 @@ import { useDeepLinkHighlight } from '../../settings/use-deep-link-highlight'
 import { CatalogAlert } from '../catalog/catalog-alert'
 import { CatalogBrowser } from '../catalog/catalog-browser'
 import { type CatalogEntry, parseCatalog } from '../catalog/catalog-data'
+import { FREE_LOCK_MESSAGE, freeListAllowed } from '../free-tier'
 import { TOOLSETS_QUERY_KEY } from '../toolsets/toolsets-data'
 
 import { mergePluginPackages, type PackageKind, type PluginPackage } from './plugin-packages'
@@ -710,6 +710,7 @@ export const PluginsTab = memo(function PluginsTab({
 
       if (enable && !freeListAllowed(names, pkg.name, unlocked)) {
         notify({ kind: 'info', title: 'Locked', message: FREE_LOCK_MESSAGE })
+
         return
       }
 

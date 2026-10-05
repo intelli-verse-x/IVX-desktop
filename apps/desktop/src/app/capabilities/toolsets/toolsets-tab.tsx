@@ -89,6 +89,7 @@ export function ToolsetsTab({ profile, query, toolsets }: ToolsetsTabProps) {
   async function handleToggleToolset(toolset: ToolsetInfo, enabled: boolean) {
     if (enabled && !freeListAllowed(toolsets.map(row => row.name), toolset.name, unlocked)) {
       notify({ kind: 'info', title: 'Locked', message: FREE_LOCK_MESSAGE })
+
       return
     }
 

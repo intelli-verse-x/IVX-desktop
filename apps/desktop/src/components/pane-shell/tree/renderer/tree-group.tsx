@@ -288,10 +288,12 @@ export function TreeGroup({
     Boolean(paneFor(id)) && (revealsHidden || !hiddenPanes.has(id)) && !(narrow && paneChrome(paneFor(id)).collapsible)
 
   const listed = node.panes.filter(paneShown)
+
   // Simple mode is one chat list. The Sessions | Bots strip is developer chrome,
   // so that zone rests on the sessions pane and drops the tab header.
   const sideChromeZone =
     !showsAdvancedChrome && listed.length > 0 && listed.every(id => paneChrome(paneFor(id)).hideOnly)
+
   const sessionPane = listed.find(id => id === 'sessions')
   const shown = sideChromeZone && sessionPane ? [sessionPane] : listed
   const memoryKey = workspaceScopeKey(workspaceMode, workspaceOwnerKey)

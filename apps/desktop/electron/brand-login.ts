@@ -1,16 +1,17 @@
-import { BrowserWindow, ipcMain, session, app } from 'electron'
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
+import { app, BrowserWindow, ipcMain, session } from 'electron'
+
 import { loadBrandConnectors, readDesktopUnlocked, rememberInboxAccountId, saveBrandConnector } from './brand-connectors'
 import {
+  type BrandSession,
   brandSessionFromCookies,
   isPortalLoginUrl,
   loginNavigationAction,
+  type PortalCookie,
   selectBrandApp,
-  signedOutBrand,
-  type BrandSession,
-  type PortalCookie
+  signedOutBrand
 } from './brand-scope'
 
 const PORTAL_ORIGIN = 'https://admin.intelli-verse-x.ai'
@@ -49,6 +50,7 @@ function readSaved(): BrandSession {
 function writeSaved(next: BrandSession): void {
   if (!next.signedIn) {
     rmSync(sessionFile(), { force: true })
+
     return
   }
 
@@ -108,15 +110,18 @@ async function currentBrand(): Promise<BrandSession> {
   }
 
   const saved = readSaved()
+
   const active =
     saved.email === live.email && saved.activeAppId && (live.isSuper || live.appIds.includes(saved.activeAppId))
       ? saved.activeAppId
       : live.activeAppId
+
   const remoteUnlock = live.isSuper ? true : await readDesktopUnlocked(active)
   const desktopUnlocked = remoteUnlock === null ? saved.desktopUnlocked === true || live.isSuper : remoteUnlock
   const next = { ...live, activeAppId: active, desktopUnlocked }
 
   writeSaved(next)
+
   return next
 }
 
@@ -210,11 +215,13 @@ function openLogin(): Promise<BrandSession> {
       }
 
       event.preventDefault()
+
       void (async () => {
         const next = await currentBrand()
 
         if (loginNavigationAction(url, next.signedIn) === 'finish') {
           await complete()
+
           return
         }
 
@@ -250,10 +257,12 @@ function openLogin(): Promise<BrandSession> {
       clearInterval(timer)
       portalSession.cookies.removeListener('changed', onCookie)
       loginWindow = null
+
       if (!settled) {
         void currentBrand().then(next => finish(next.signedIn ? next : signedOutBrand()))
       }
     })
+
     void (async () => {
       if (!(await currentBrand()).signedIn) {
         await clearStaleAuthCookies()
@@ -280,6 +289,7 @@ export function registerBrandLoginIpc(): void {
     await session.fromPartition(PARTITION).clearStorageData()
     writeSaved(signedOutBrand())
     rememberInboxAccountId('')
+
     return signedOutBrand()
   })
   ipcMain.handle('hermes:brand:select', async (_event, appId: unknown) => {
@@ -290,6 +300,7 @@ export function registerBrandLoginIpc(): void {
     const saved = { ...next, desktopUnlocked }
 
     writeSaved(saved)
+
     return saved
   })
   ipcMain.handle('hermes:brand:connectors', async () => loadBrandConnectors(await currentBrand()))

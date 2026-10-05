@@ -2,13 +2,13 @@ import { useCallback, useEffect, useState } from 'react'
 
 import {
   deleteDiscordDesk,
+  type DiscordDeskStatus,
+  type DiscordGuildChannels,
   getDiscordDesk,
   listDeskPlatforms,
   listDiscordChannels,
   saveDeskPlatform,
-  saveDiscordDesk,
-  type DiscordDeskStatus,
-  type DiscordGuildChannels
+  saveDiscordDesk
 } from '@/api/discord-desk'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
@@ -80,10 +80,12 @@ export function DiscordPanel({ profile }: { profile: ProfileScope }) {
   const tokenReady = discordTokenAccepted(token) || (token.trim() === '' && status?.token_set === true)
   const userReady = discordSnowflake(userId) !== null
   const channelReady = discordSnowflake(channelId) !== null
+
   const channelName =
     guilds.flatMap(guild => guild.channels).find(channel => channel.id === channelId)?.name ||
     status?.channel_name ||
     ''
+
   const others = platforms.filter(platform => platform.id !== 'discord' && platform.configured)
   const choices = platforms.filter(platform => platform.id !== 'discord' && editableFields(platform).length > 0)
   const fields = editing ? editableFields(editing) : []
@@ -256,6 +258,7 @@ export function DiscordPanel({ profile }: { profile: ProfileScope }) {
       <Dialog
         onOpenChange={next => {
           setEditorOpen(next)
+
           if (!next) {
             setEditing(null)
           }

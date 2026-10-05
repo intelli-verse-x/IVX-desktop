@@ -89,12 +89,12 @@ function TokenUsage() {
         <p className="mb-4 text-sm text-(--ui-text-tertiary)">{copy.usageUnavailable}</p>
       ) : summary && summary.total_tokens > 0 ? (
         <>
-          <ListRow description={copy.usageChats(summary.chat_count)} title={copy.usageTotal} action={compactNumber(summary.total_tokens)} />
-          <ListRow title={copy.usageInput} action={compactNumber(summary.input_tokens)} />
-          <ListRow title={copy.usageOutput} action={compactNumber(summary.output_tokens)} />
-          <ListRow title={copy.usageCache} action={compactNumber(cache)} />
-          <ListRow title={copy.usageReasoning} action={compactNumber(summary.reasoning_tokens)} />
-          <ListRow title={copy.usageCost} action={formatCost(summary.cost_usd)} />
+          <ListRow action={compactNumber(summary.total_tokens)} description={copy.usageChats(summary.chat_count)} title={copy.usageTotal} />
+          <ListRow action={compactNumber(summary.input_tokens)} title={copy.usageInput} />
+          <ListRow action={compactNumber(summary.output_tokens)} title={copy.usageOutput} />
+          <ListRow action={compactNumber(cache)} title={copy.usageCache} />
+          <ListRow action={compactNumber(summary.reasoning_tokens)} title={copy.usageReasoning} />
+          <ListRow action={formatCost(summary.cost_usd)} title={copy.usageCost} />
           {summary.models.length > 0 ? (
             <>
               <p className="mt-3 mb-1 text-xs font-medium text-(--ui-text-secondary)">{copy.usageModels}</p>

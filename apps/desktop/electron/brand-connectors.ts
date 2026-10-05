@@ -1,7 +1,8 @@
-import { app, session } from 'electron'
 import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import path from 'node:path'
+
+import { app, session } from 'electron'
 
 import type { BrandSession } from './brand-scope'
 import { resolveDesktopHermesHome } from './data-paths'
@@ -69,6 +70,7 @@ interface WebRow {
 
 function numericAccountId(value: unknown): string {
   const id = typeof value === 'string' ? value.trim() : ''
+
   return /^\d+$/.test(id) ? id : ''
 }
 
@@ -261,6 +263,7 @@ async function portalJson(method: string, urlPath: string, body?: unknown): Prom
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body)
   })
+
   const parsed = await response.json().catch(() => null)
 
   return { ok: response.ok, status: response.status, body: parsed }
@@ -301,6 +304,7 @@ export function rememberInboxAccountId(accountId: string): void {
   try {
     if (!id) {
       unlinkSync(file)
+
       return
     }
 

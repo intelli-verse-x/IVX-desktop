@@ -48,6 +48,7 @@ function actionPhrase(name: string): string {
     .split('·')
     .map(part => part.trim())
     .filter(Boolean)
+
   const source = segments.length > 1 ? segments[segments.length - 1] : name
   const leaf = source.split('__').filter(Boolean).pop() ?? source
   let rest = leaf

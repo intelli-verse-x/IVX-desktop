@@ -1,7 +1,7 @@
-import { freeConnectorAllowed } from '@/app/capabilities/free-tier'
 import { profileScoped } from '@/api/client'
 import { addMcpServer, listMcpServers, setMcpServerEnabled } from '@/api/mcp'
 import { setMcpBearerToken } from '@/app/capabilities/connectors/data/rpc'
+import { freeConnectorAllowed } from '@/app/capabilities/free-tier'
 import type { DesktopBrandConnector } from '@/global'
 import { $brandSession, capabilitiesUnlocked } from '@/store/brand-session'
 
@@ -32,6 +32,7 @@ async function reloadConnectedBrandMcp(): Promise<void> {
   if (send()) {
     reloadWhenOpen?.()
     reloadWhenOpen = null
+
     return
   }
 
@@ -57,6 +58,7 @@ function writeMcp(task: () => Promise<void>): Promise<void> {
     () => undefined,
     () => undefined
   )
+
   return run
 }
 
