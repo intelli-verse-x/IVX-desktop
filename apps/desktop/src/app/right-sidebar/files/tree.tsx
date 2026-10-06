@@ -38,6 +38,7 @@ interface ProjectTreeProps {
   collapseNonce: number
   cwd: string
   data: TreeNode[]
+  instanceKey?: string
   onActivateFile: (path: string) => void
   onActivateFolder: (path: string) => void
   onLoadChildren: (id: string) => void | Promise<void>
@@ -50,6 +51,7 @@ export function ProjectTree({
   collapseNonce,
   cwd,
   data,
+  instanceKey = '',
   onActivateFile,
   onActivateFolder,
   onLoadChildren,
@@ -195,7 +197,7 @@ export function ProjectTree({
           height={size.height}
           indent={INDENT}
           initialOpenState={openState}
-          key={`${cwd}:${collapseNonce}`}
+          key={`${cwd}:${collapseNonce}:${instanceKey}`}
           onActivate={handleActivate}
           onToggle={handleToggle}
           openByDefault={false}
@@ -333,6 +335,7 @@ function ProjectTreeRow({
           node.toggle()
         } else {
           node.select()
+          onPreviewFile?.(node.data.id)
         }
       }}
       onDoubleClick={event => {

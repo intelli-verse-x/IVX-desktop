@@ -32,7 +32,7 @@ import {
   writeDesktopFileText
 } from '@/lib/desktop-fs'
 import { ExternalLink } from '@/lib/external-link'
-import { Check, Pencil, X } from '@/lib/icons'
+import { Check, X } from '@/lib/icons'
 import { createMemoizedMathPlugin } from '@/lib/katex-memo'
 import { isComposerChord } from '@/lib/keybinds/chords'
 import { normalizeOrLocalPreviewTarget } from '@/lib/local-preview'
@@ -175,19 +175,6 @@ interface LocalPreviewState {
   text?: string
   loading: boolean
   truncated?: boolean
-}
-
-// True when focus is in a field that should swallow plain keystrokes (so the
-// bare-`e` edit shortcut never fires while the user is typing in the composer,
-// a search box, or the editor itself).
-function isTypableElement(el: Element | null): boolean {
-  if (!el) {
-    return false
-  }
-
-  const tag = el.tagName
-
-  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (el as HTMLElement).isContentEditable
 }
 
 function filePathForTarget(target: PreviewTarget) {
@@ -774,10 +761,6 @@ export function LocalFilePreview({
   const [saveError, setSaveError] = useState<null | string>(null)
   const [conflict, setConflict] = useState(false)
   const [selfReload, setSelfReload] = useState(0)
-  // For the bare-`e` shortcut: the read-view root (to detect focus-within) and a
-  // hover flag (no state — only the keydown handler reads it).
-  const readViewRef = useRef<HTMLDivElement>(null)
-  const hoverRef = useRef(false)
   const connection = useStore($connection)
   const fsCacheKey = desktopFsCacheKey(connection)
   const filePath = filePathForTarget(target)
@@ -957,6 +940,10 @@ export function LocalFilePreview({
   }, [target.url, editing, dirty])
 
   const beginEdit = () => {
+    if (!canEdit) {
+      return
+    }
+
     const text = state.text ?? ''
     baselineRef.current = text
     draftRef.current = text
@@ -967,44 +954,6 @@ export function LocalFilePreview({
     setConflict(false)
     setEditing(true)
   }
-
-  // Latest `beginEdit` for the keydown listener, so the listener can stay
-  // subscribed across renders without recreating itself or going stale.
-  const beginEditRef = useRef(beginEdit)
-  beginEditRef.current = beginEdit
-
-  // Bare `e` enters edit mode when the file pane is hovered or focused and no
-  // typable field has focus — a fast, button-free path (double-click felt laggy
-  // because of the browser's click-disambiguation delay).
-  useEffect(() => {
-    if (!canEdit || editing) {
-      return
-    }
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'e' || event.metaKey || event.ctrlKey || event.altKey) {
-        return
-      }
-
-      if (isTypableElement(document.activeElement)) {
-        return
-      }
-
-      const root = readViewRef.current
-      const focusWithin = Boolean(root && document.activeElement && root.contains(document.activeElement))
-
-      if (!hoverRef.current && !focusWithin) {
-        return
-      }
-
-      event.preventDefault()
-      beginEditRef.current()
-    }
-
-    window.addEventListener('keydown', onKeyDown)
-
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [canEdit, editing])
 
   const cancelEdit = () => {
     setEditing(false)
@@ -1216,41 +1165,17 @@ export function LocalFilePreview({
     }
 
     return (
-      <div
-        className="flex h-full flex-col overflow-hidden bg-transparent"
-        onMouseEnter={() => {
-          hoverRef.current = true
-        }}
-        onMouseLeave={() => {
-          hoverRef.current = false
-        }}
-        ref={readViewRef}
-      >
+      <div className="flex h-full flex-col overflow-hidden bg-transparent">
         {state.truncated && (
           <div className="border-b border-border/60 bg-muted/35 px-3 py-1.5 text-[0.68rem] text-muted-foreground">
             {t.preview.truncated}
           </div>
         )}
-        <PreviewModeSwitcher
-          active={mode}
-          modes={modes}
-          onSelect={selectMode}
-          trailing={
-            canEdit ? (
-              <Tip label={`${t.preview.edit} (e)`}>
-                <button
-                  className="flex items-center gap-1 text-[0.625rem] font-bold text-muted-foreground underline-offset-4 transition-colors hover:text-foreground"
-                  onClick={beginEdit}
-                  type="button"
-                >
-                  <Pencil className="size-3" />
-                  {t.preview.edit}
-                </button>
-              </Tip>
-            ) : null
-          }
-        />
-        <div className="min-h-0 flex-1 overflow-auto">
+        <PreviewModeSwitcher active={mode} modes={modes} onSelect={selectMode} />
+        <div
+          className="min-h-0 flex-1 overflow-auto"
+          onClick={canEdit && mode !== 'diff' ? beginEdit : undefined}
+        >
           {mode === 'rendered' ? (
             <MarkdownPreview filePath={filePath} text={state.text} />
           ) : mode === 'diff' ? (
