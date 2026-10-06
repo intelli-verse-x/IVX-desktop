@@ -8,6 +8,7 @@ import type { HermesGateway, ProfileScope } from '@/hermes'
 import { useI18n } from '@/i18n'
 import { FREE_LOCK_MESSAGE, freeConnectorAllowed } from '../free-tier'
 import { $brandSession, capabilitiesUnlocked } from '@/store/brand-session'
+import { isCurrentBrandMcp } from '@/app/brand/sync-brand-mcp'
 import { $freeTierStatus } from '@/store/free-tier'
 import { openFreeTierSignIn } from '@/store/free-tier-sign-in'
 import { notify, notifyError, readableError } from '@/store/notifications'
@@ -83,10 +84,14 @@ export function ConnectorsTab({ gateway, profile }: ConnectorsTabProps) {
   const lastKnownServers = useMemo(() => seedLocalServers(profile), [profile])
   const pluginServers = usePluginServers(profile)
 
-  const servers = useMemo(
-    () => [...(mcp.configLoading ? lastKnownServers : local), ...pluginServers],
-    [lastKnownServers, local, mcp.configLoading, pluginServers]
-  )
+  const brand = useStore($brandSession)
+  const servers = useMemo(() => {
+    const appId = brand.signedIn ? brand.activeAppId : ''
+
+    return [...(mcp.configLoading ? lastKnownServers : local), ...pluginServers].filter(server =>
+      isCurrentBrandMcp(server.name, appId)
+    )
+  }, [brand.activeAppId, brand.signedIn, lastKnownServers, local, mcp.configLoading, pluginServers])
 
   useEffect(() => {
     if (!mcp.configLoading) {

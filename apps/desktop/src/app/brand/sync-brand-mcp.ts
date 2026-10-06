@@ -1,12 +1,30 @@
 import { freeConnectorAllowed } from '@/app/capabilities/free-tier'
 import { profileScoped } from '@/api/client'
-import { addMcpServer, listMcpServers, setMcpServerEnabled } from '@/api/mcp'
+import { addMcpServer, listMcpServers, removeMcpServer, setMcpServerEnabled } from '@/api/mcp'
 import { setMcpBearerToken } from '@/app/capabilities/connectors/data/rpc'
 import type { DesktopBrandConnector } from '@/global'
+import { queryClient } from '@/lib/query-client'
 import { $brandSession, capabilitiesUnlocked } from '@/store/brand-session'
 
 /** The shared test server. A signed-in brand does not use this key. */
 const SHARED_TEST_MCP_SERVER = 'firecrawl'
+
+/** Brand tools are saved as `ivx-<app>-<connector>`. Other MCP names stay. */
+export function isCurrentBrandMcp(name: string, appId: string): boolean {
+  if (!name.startsWith('ivx-')) {
+    return true
+  }
+
+  const app = appId.trim().toLowerCase().replace(/[^a-z0-9-]/g, '')
+
+  return app.length > 0 && name.startsWith(`ivx-${app}-`)
+}
+
+async function refreshConnectorList(): Promise<void> {
+  await queryClient.invalidateQueries({
+    predicate: query => Array.isArray(query.queryKey) && query.queryKey.includes('plugin-servers')
+  })
+}
 
 let reloadWhenOpen: (() => void) | null = null
 
@@ -109,11 +127,12 @@ async function applyBrandMcp(connectors: DesktopBrandConnector[]): Promise<void>
   }
 
   for (const server of listed.servers) {
-    if (server.name.startsWith('ivx-') && !wanted.has(server.name) && server.enabled) {
-      await setMcpServerEnabled(server.name, false)
+    if (server.name.startsWith('ivx-') && !wanted.has(server.name)) {
+      await removeMcpServer(server.name).catch(() => undefined)
     }
   }
 
+  await refreshConnectorList()
   await reloadConnectedBrandMcp()
 }
 
@@ -131,11 +150,12 @@ export function releaseBrandMcp(): Promise<void> {
     }
 
     for (const server of listed.servers) {
-      if (server.name.startsWith('ivx-') && server.enabled) {
-        await setMcpServerEnabled(server.name, false)
+      if (server.name.startsWith('ivx-')) {
+        await removeMcpServer(server.name).catch(() => undefined)
       }
     }
 
+    await refreshConnectorList()
     await reloadConnectedBrandMcp()
   })
 }
