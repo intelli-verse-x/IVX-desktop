@@ -13,12 +13,22 @@ import { cn } from '@/lib/utils'
 import { refreshRepoStatus, registerRepoStatusCwd } from '@/store/coding-status'
 import { $panesFlipped } from '@/store/layout'
 import { notifyError } from '@/store/notifications'
+import { cleanPath } from '@/lib/path-compare'
 import { openPreview } from '@/store/preview'
-import { openFolderAsProject } from '@/store/projects'
+import {
+  $activeProjectId,
+  $projects,
+  openAddFolderForWorkspace,
+  openFolderAsProject,
+  openProjectAddFolder,
+  openProjectCreate
+} from '@/store/projects'
+import { $workspaceFolders } from '@/store/workspace-folders'
 import { $focusedWorkspaceCwd } from '@/store/session-states'
 
 import { SidebarPanelLabel } from '../shell/sidebar-label'
 
+import { useWorkspaceRoots } from './files/added-folder'
 import { ProjectTree } from './files/tree'
 import { useProjectTree } from './files/use-project-tree'
 
@@ -94,11 +104,10 @@ export function RightSidebarPane({ onActivateFile, onActivateFolder }: RightSide
     <aside
       aria-label={r.aria}
       className={cn(
-        'before:pointer-events-none relative flex h-full w-full min-w-0 flex-col overflow-hidden border-(--ui-stroke-secondary) bg-(--ui-sidebar-surface-background) pt-(--titlebar-height) text-(--ui-text-tertiary)',
-        panesFlipped
-          ? 'border-r shadow-[inset_-0.0625rem_0_0_color-mix(in_srgb,white_18%,transparent)]'
-          : 'border-l shadow-[inset_0.0625rem_0_0_color-mix(in_srgb,white_18%,transparent)]'
+        'before:pointer-events-none relative flex h-full w-full min-w-0 flex-col overflow-hidden border-(--sidebar-edge-border) bg-(--ui-sidebar-surface-background) pt-(--titlebar-height) text-(--ui-text-tertiary)',
+        panesFlipped ? 'border-r border-l-0' : 'border-l border-r-0'
       )}
+      data-tour="files-sidebar"
     >
       <FilesystemTab
         canCollapse={canCollapse}
@@ -163,6 +172,10 @@ function FilesystemTab({
 }: FilesystemTabProps) {
   const { t } = useI18n()
   const r = t.rightSidebar
+  const activeProjectId = useStore($activeProjectId)
+  const savedProject = useStore($projects).find(project => project.id === activeProjectId && project.id.startsWith('p_'))
+  const workspaceTitle = savedProject?.name || cwdName
+  const projectFolders = (savedProject?.folders ?? []).map(folder => folder.path).filter(Boolean)
 
   // No working directory (a bare/detached chat) → no tree, but keep a way back
   // into a folder (#53004): the projects paradigm removed the old folder picker,
@@ -174,6 +187,10 @@ function FilesystemTab({
     return (
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 px-4 text-center">
         <SidebarPanelLabel className="pl-0 text-(--ui-text-quaternary)">{r.noProjectOpen}</SidebarPanelLabel>
+        <Button className="h-7 gap-1.5 text-xs" onClick={() => openProjectCreate()} size="sm" variant="outline">
+          <Codicon name="add" size="0.8125rem" />
+          {t.sidebar.projects.newButton}
+        </Button>
         <Button className="h-7 gap-1.5 text-xs" onClick={() => void openFolderAsProject()} size="sm" variant="outline">
           <Codicon name="folder-opened" size="0.8125rem" />
           {r.openFolder}
@@ -186,7 +203,7 @@ function FilesystemTab({
     <div className="flex min-h-0 flex-1 flex-col">
       <RightSidebarSectionHeader>
         <div className="flex min-w-0 flex-1">
-          <SidebarPanelLabel>{cwdName}</SidebarPanelLabel>
+          <SidebarPanelLabel>{workspaceTitle}</SidebarPanelLabel>
         </div>
         <Tip label={showIgnored ? r.hideIgnored : r.showIgnored}>
           <Button
@@ -227,9 +244,32 @@ function FilesystemTab({
           </Button>
         </Tip>
       </RightSidebarSectionHeader>
+      <button
+        className="flex h-7 shrink-0 items-center gap-1.5 px-2.5 text-xs text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        onClick={() => openProjectCreate()}
+        type="button"
+      >
+        <Codicon name="add" size="0.8125rem" />
+        {t.sidebar.projects.newButton}
+      </button>
+      <button
+        className="flex h-7 shrink-0 items-center gap-1.5 px-2.5 text-xs text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        onClick={() => {
+          if (savedProject) {
+            openProjectAddFolder({ id: savedProject.id, name: savedProject.name })
+          } else {
+            void openAddFolderForWorkspace(cwd)
+          }
+        }}
+        type="button"
+      >
+        <Codicon name="new-folder" size="0.8125rem" />
+        {t.sidebar.projects.addFolder}
+      </button>
       <FileTreeBody
         collapseNonce={collapseNonce}
         cwd={cwd}
+        projectFolders={projectFolders}
         data={data}
         error={error}
         loading={loading}
@@ -264,6 +304,7 @@ interface FileTreeBodyProps {
   onLoadChildren: (id: string) => void | Promise<void>
   onNodeOpenChange: (id: string, open: boolean) => void
   onPreviewFile?: (path: string) => void
+  projectFolders?: string[]
   /** Force-reload the root. The hook also auto-retries while errored, so this
    *  is the impatient-user path. */
   onRetry?: () => void
@@ -282,10 +323,18 @@ function FileTreeBody({
   onNodeOpenChange,
   onPreviewFile,
   onRetry,
-  openState
+  openState,
+  projectFolders = []
 }: FileTreeBodyProps) {
   const { t } = useI18n()
   const r = t.rightSidebar
+  const savedExtras = useStore($workspaceFolders)[cleanPath(cwd)] ?? []
+  const extraFolders = [...projectFolders, ...savedExtras].filter((folder, index, all) => {
+    const key = cleanPath(folder)
+
+    return key !== cleanPath(cwd) && all.findIndex(item => cleanPath(item) === key) === index
+  })
+  const workspace = useWorkspaceRoots(cwd, data, extraFolders, onLoadChildren, onNodeOpenChange, openState)
   // Stay blank for a beat, then skeleton — so a fast project switch doesn't
   // flash a jarring loading state.
   const showSkeleton = useDelayedTrue(loading && data.length === 0)
@@ -339,13 +388,14 @@ function FileTreeBody({
       <ProjectTree
         collapseNonce={collapseNonce}
         cwd={cwd}
-        data={data}
+        data={workspace.data}
+        instanceKey={extraFolders.join('|')}
         onActivateFile={onActivateFile}
         onActivateFolder={onActivateFolder}
-        onLoadChildren={onLoadChildren}
-        onNodeOpenChange={onNodeOpenChange}
+        onLoadChildren={workspace.loadChildren}
+        onNodeOpenChange={workspace.setOpen}
         onPreviewFile={onPreviewFile}
-        openState={openState}
+        openState={workspace.openState}
       />
     </ErrorBoundary>
   )

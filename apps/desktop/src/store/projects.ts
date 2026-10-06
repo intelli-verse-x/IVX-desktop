@@ -48,6 +48,7 @@ import {
 import type { ProjectInfo, ProjectsPayload } from '@/types/hermes'
 
 import { recordFeatureUse } from './desktop-metrics'
+import { addWorkspaceFolder } from './workspace-folders'
 
 // First-class, per-profile Projects (named, multi-folder workspaces). State is
 // served by the live gateway's `projects.*` JSON-RPC methods, which wrap the
@@ -1320,6 +1321,30 @@ export function openProjectRename(project: { id: string; name: string }): void {
 
 export function openProjectAddFolder(project: { id: string; name: string }): void {
   $projectDialog.set({ mode: 'add-folder', name: project.name, projectId: project.id })
+}
+
+/** Add another folder beside the open workspace. The pick is stored in the
+ *  desktop, so it does not depend on the backend project API. */
+export async function openAddFolderForWorkspace(cwd: string): Promise<void> {
+  const path = cwd.trim()
+
+  if (!path) {
+    return
+  }
+
+  try {
+    const picked = await selectDesktopPaths({ directories: true, title: translateNow('sidebar.projects.addFolder') })
+    const folder = picked[0]?.trim()
+
+    if (folder) {
+      addWorkspaceFolder(path, folder)
+    }
+  } catch (error) {
+    notify({
+      kind: 'warning',
+      message: error instanceof Error ? error.message : String(error)
+    })
+  }
 }
 
 export function closeProjectDialog(): void {

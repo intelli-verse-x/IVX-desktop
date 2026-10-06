@@ -67,6 +67,12 @@ export function LayoutTreeRoot({ children, titlebar = false }: { children?: Reac
         [data-tree-group] [data-tour='sessions-sidebar'].border-l {
           border-left: 1px solid var(--sidebar-edge-border);
         }
+        [data-tree-group] [data-tour='files-sidebar'].border-l {
+          border-left: 1px solid var(--sidebar-edge-border);
+        }
+        [data-tree-group] [data-tour='files-sidebar'].border-r {
+          border-right: 1px solid var(--sidebar-edge-border);
+        }
         /* Old-shell titlebar BANDS (chat's session header et al size to
            --titlebar-height, which is 0 inside zones): a zero-height band is
            non-functional but still paints its border-b — a stray hairline
