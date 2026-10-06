@@ -14,6 +14,7 @@ import {
 import { isMessagingSource } from '@/lib/session-source'
 import type { TileSessionFocusStamp } from '@/lib/session-timer-since'
 import { persistBoolean, persistString, readJson, storedBoolean, storedString, writeJson } from '@/lib/storage'
+import { cleanPath, comparisonPath } from '@/lib/path-compare'
 import type { SessionInfo, UsageStats } from '@/types/hermes'
 
 import { $removedSessionIds, isSessionRemovalPending, tombstoneRowIds } from './session-removal'
@@ -368,9 +369,19 @@ export async function syncConfiguredDefaultProjectDir(shouldPublish: () => boole
   return configuredDefaultProjectDir
 }
 
-/** Align the renderer workspace with the main-process default (home dir when
- *  packaged, optional Settings override). Clears stale install-dir paths that
- *  PR #37586's localStorage stickiness can preserve across the #37536 fix. */
+function isHomeWorkspace(cwd: string, home: string): boolean {
+  const folder = cwd.trim()
+  const root = home.trim()
+
+  if (!folder || !root) {
+    return false
+  }
+
+  return comparisonPath(cleanPath(folder)) === comparisonPath(cleanPath(root))
+}
+
+/** Align the renderer workspace with an explicit default folder, never the home
+ *  directory. Home is a process cwd for the agent, not a files-tree to open. */
 export async function ensureDefaultWorkspaceCwd(shouldPublish: () => boolean = () => true): Promise<void> {
   const sanitize = window.hermesDesktop?.sanitizeWorkspaceCwd
 
@@ -385,6 +396,8 @@ export async function ensureDefaultWorkspaceCwd(shouldPublish: () => boolean = (
   }
 
   const configured = getConfiguredDefaultProjectDir()
+  const home =
+    (await window.hermesDesktop?.settings?.getDefaultProjectDir?.().catch(() => null))?.defaultLabel?.trim() || ''
 
   // Transient: each source below is already remembered or comes from config, so
   // persisting would only promote a configured default into the per-backend
@@ -404,7 +417,9 @@ export async function ensureDefaultWorkspaceCwd(shouldPublish: () => boolean = (
     // than left in place (seedLiveCwd's cwd-truthy guard would otherwise skip
     // publishing and leave the old path looking valid — #114306).
     if (shouldPublish() && !$activeSessionId.get()) {
-      setCurrentCwdTransient(remembered)
+      const next = remembered && !isHomeWorkspace(remembered, home) ? remembered : ''
+
+      setCurrentCwdTransient(next)
     }
 
     return
@@ -420,10 +435,17 @@ export async function ensureDefaultWorkspaceCwd(shouldPublish: () => boolean = (
   // An empty memory is meaningful here too: on a local profile switch the
   // live cwd still belongs to the outgoing profile, so clear it rather than
   // let the incoming profile's new chats start there (#96834).
+  // The home directory was the historical fallback and must not reopen the
+  // whole user folder in Files.
   const { cwd } = remembered ? await sanitize(remembered) : { cwd: '' }
+  const next = cwd && !isHomeWorkspace(cwd, home) ? cwd : ''
 
   if (shouldPublish() && !$activeSessionId.get()) {
-    setCurrentCwdTransient(cwd)
+    setCurrentCwdTransient(next)
+
+    if (remembered && !next) {
+      persistString(workspaceCwdKey(), null)
+    }
   }
 }
 
@@ -1390,7 +1412,7 @@ export const $currentFastMode = atom(storedBoolean(COMPOSER_FAST_KEY, false))
 // Persistence lives in the backend config (approvals.mode), so this is a plain
 // reflection of the truth the gateway reports rather than its own store.
 export const $yoloActive = atom(false)
-export const $currentCwd = atom(getRememberedWorkspaceCwd())
+export const $currentCwd = atom('')
 
 // Which conversation the live `$currentCwd` is known to describe. Three
 // inhabitants, and the difference between the last two is load-bearing:

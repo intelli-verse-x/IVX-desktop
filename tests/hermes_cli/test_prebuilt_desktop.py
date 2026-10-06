@@ -7,12 +7,17 @@ from pathlib import Path
 import pytest
 
 from hermes_cli.prebuilt_desktop import (
+    APP_ASSET,
     ASSET_NAME,
+    META_ASSET,
     RECEIPT_NAME,
     _extract_unpacked,
     install_prebuilt_desktop,
+    pack_app_bundle,
     prebuilt_state,
+    publish_ci_artifacts,
     release_tag,
+    unpacked_runtime_hash,
 )
 from hermes_cli.source_releases import OFFICIAL_REPOSITORY
 
@@ -111,7 +116,7 @@ def test_install_stamps_the_ci_zip_next_to_the_exe(tmp_path, monkeypatch):
         "assets": [{"name": ASSET_NAME, "browser_download_url": "https://example.test/app.zip"}],
     })
 
-    def fake_download(_url, dest):
+    def fake_download(_url, dest, max_bytes=0):
         with zipfile.ZipFile(dest, "w") as bundle:
             bundle.writestr("win-unpacked/IVX-Agency.exe", b"app")
 
@@ -124,3 +129,135 @@ def test_install_stamps_the_ci_zip_next_to_the_exe(tmp_path, monkeypatch):
     assert receipt["product"] == "desktop"
     assert receipt["sha"] == sha
     assert receipt["sourceHash"] == digest
+    assert receipt["runtimeHash"] == unpacked_runtime_hash(live)
+
+
+def test_runtime_hash_ignores_the_app_bundle(tmp_path: Path):
+    unpacked = tmp_path / "win-unpacked"
+    resources = unpacked / "resources" / "app.asar.unpacked"
+    resources.mkdir(parents=True)
+    (unpacked / "IVX-Agency.exe").write_bytes(b"MZ-electron")
+    (unpacked / "resources" / "app.asar").write_bytes(b"old-ui")
+    (resources / "index.js").write_text("old", encoding="utf-8")
+    first = unpacked_runtime_hash(unpacked)
+    (unpacked / "resources" / "app.asar").write_bytes(b"new-ui")
+    (resources / "index.js").write_text("new", encoding="utf-8")
+    (unpacked / RECEIPT_NAME).write_text("{}", encoding="utf-8")
+    assert unpacked_runtime_hash(unpacked) == first
+    (unpacked / "d3dcompiler_47.dll").write_bytes(b"native")
+    assert unpacked_runtime_hash(unpacked) != first
+
+
+def test_app_bundle_keeps_electron_when_runtime_matches(tmp_path, monkeypatch):
+    import hermes_cli.prebuilt_desktop as prebuilt
+
+    monkeypatch.setattr(prebuilt.os, "name", "nt")
+    sha = "a" * 40
+    digest = "b" * 64
+    live = tmp_path / "apps/desktop/release/win-unpacked"
+    live_resources = live / "resources" / "app.asar.unpacked"
+    live_resources.mkdir(parents=True)
+    (live / "IVX-Agency.exe").write_bytes(b"MZ-electron")
+    (live / "d3dcompiler_47.dll").write_bytes(b"native")
+    (live / "resources" / "app.asar").write_bytes(b"old-ui")
+    (live_resources / "index.js").write_text("old", encoding="utf-8")
+    runtime = unpacked_runtime_hash(live)
+    (live / RECEIPT_NAME).write_text(json.dumps({
+        "schema": 1, "product": "desktop", "sha": "c" * 40,
+        "sourceHash": "d" * 64, "runtimeHash": runtime,
+    }), encoding="utf-8")
+
+    overlay = tmp_path / "overlay"
+    overlay_resources = overlay / "resources" / "app.asar.unpacked"
+    overlay_resources.mkdir(parents=True)
+    (overlay / "resources" / "app.asar").write_bytes(b"new-ui")
+    (overlay_resources / "index.js").write_text("new", encoding="utf-8")
+    app_zip = tmp_path / APP_ASSET
+    pack_app_bundle(overlay, app_zip)
+
+    monkeypatch.setattr(prebuilt, "_head_sha", lambda _: sha)
+    monkeypatch.setattr(prebuilt, "desktop_source_hash", lambda _: digest)
+    monkeypatch.setattr("hermes_cli.source_releases.source_repository", lambda *a, **k: OFFICIAL_REPOSITORY)
+    monkeypatch.setattr(prebuilt, "_release_payload", lambda *_a, **_k: {
+        "assets": [
+            {"name": ASSET_NAME, "browser_download_url": "https://example.test/full.zip"},
+            {"name": APP_ASSET, "browser_download_url": "https://example.test/app.zip"},
+            {"name": META_ASSET, "browser_download_url": "https://example.test/meta.json"},
+        ],
+    })
+    monkeypatch.setattr(prebuilt, "_release_meta", lambda *_a, **_k: {
+        "schema": 1, "product": "desktop", "sourceHash": digest, "runtimeHash": runtime,
+    })
+
+    downloaded = []
+
+    def fake_download(url, dest, max_bytes=0):
+        downloaded.append(url)
+        dest.write_bytes(app_zip.read_bytes())
+
+    monkeypatch.setattr(prebuilt, "_download", fake_download)
+    assert install_prebuilt_desktop(tmp_path) is True
+    assert downloaded == ["https://example.test/app.zip"]
+    assert (live / "IVX-Agency.exe").read_bytes() == b"MZ-electron"
+    assert (live / "resources" / "app.asar").read_bytes() == b"new-ui"
+    receipt = json.loads((live / RECEIPT_NAME).read_text(encoding="utf-8"))
+    assert receipt["sourceHash"] == digest
+    assert receipt["runtimeHash"] == runtime
+
+
+def test_full_zip_when_electron_runtime_changed(tmp_path, monkeypatch):
+    import hermes_cli.prebuilt_desktop as prebuilt
+
+    monkeypatch.setattr(prebuilt.os, "name", "nt")
+    sha = "a" * 40
+    digest = "b" * 64
+    live = tmp_path / "apps/desktop/release/win-unpacked"
+    live.mkdir(parents=True)
+    (live / "IVX-Agency.exe").write_bytes(b"old-electron")
+    (live / RECEIPT_NAME).write_text(json.dumps({
+        "schema": 1, "product": "desktop", "sourceHash": "d" * 64, "runtimeHash": "e" * 64,
+    }), encoding="utf-8")
+    monkeypatch.setattr(prebuilt, "_head_sha", lambda _: sha)
+    monkeypatch.setattr(prebuilt, "desktop_source_hash", lambda _: digest)
+    monkeypatch.setattr("hermes_cli.source_releases.source_repository", lambda *a, **k: OFFICIAL_REPOSITORY)
+    monkeypatch.setattr(prebuilt, "_release_payload", lambda *_a, **_k: {
+        "assets": [
+            {"name": ASSET_NAME, "browser_download_url": "https://example.test/full.zip"},
+            {"name": APP_ASSET, "browser_download_url": "https://example.test/app.zip"},
+            {"name": META_ASSET, "browser_download_url": "https://example.test/meta.json"},
+        ],
+    })
+    monkeypatch.setattr(prebuilt, "_release_meta", lambda *_a, **_k: {
+        "schema": 1, "product": "desktop", "sourceHash": digest, "runtimeHash": "f" * 64,
+    })
+
+    def fake_download(url, dest, max_bytes=0):
+        assert url == "https://example.test/full.zip"
+        with zipfile.ZipFile(dest, "w") as bundle:
+            bundle.writestr("win-unpacked/IVX-Agency.exe", b"new-electron")
+
+    monkeypatch.setattr(prebuilt, "_download", fake_download)
+    assert install_prebuilt_desktop(tmp_path) is True
+    live = tmp_path / "apps/desktop/release/win-unpacked"
+    assert (live / "IVX-Agency.exe").read_bytes() == b"new-electron"
+
+
+def test_ci_artifacts_include_meta_and_app_zip(tmp_path: Path):
+    unpacked = tmp_path / "win-unpacked"
+    resources = unpacked / "resources" / "app.asar.unpacked"
+    resources.mkdir(parents=True)
+    (unpacked / "IVX-Agency.exe").write_bytes(b"MZ")
+    (unpacked / "resources" / "app.asar").write_bytes(b"ui")
+    (resources / "index.js").write_text("ui", encoding="utf-8")
+    dest = tmp_path / "out"
+    digest = "b" * 64
+    publish_ci_artifacts(unpacked, "A" * 40, digest, "intelli-verse-x/IVX-desktop", dest)
+    receipt = json.loads((unpacked / RECEIPT_NAME).read_text(encoding="utf-8"))
+    meta = json.loads((dest / META_ASSET).read_text(encoding="utf-8"))
+    assert receipt["runtimeHash"] == unpacked_runtime_hash(unpacked)
+    assert meta["runtimeHash"] == receipt["runtimeHash"]
+    assert meta["sourceHash"] == digest
+    with zipfile.ZipFile(dest / APP_ASSET) as bundle:
+        names = set(bundle.namelist())
+    assert "resources/app.asar" in names
+    assert "IVX-Agency.exe" not in names

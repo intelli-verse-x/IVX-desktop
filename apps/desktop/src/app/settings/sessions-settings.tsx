@@ -331,7 +331,6 @@ function DefaultProjectDirSetting() {
   const { t } = useI18n()
   const s = t.settings.sessions
   const [dir, setDir] = useState<null | string>(null)
-  const [fallback, setFallback] = useState<string>('')
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
@@ -354,7 +353,6 @@ function DefaultProjectDirSetting() {
       }
 
       setDir(result.dir)
-      setFallback(result.defaultLabel)
       applyConfiguredDefaultProjectDir(result.dir)
     })
 
@@ -431,7 +429,7 @@ function DefaultProjectDirSetting() {
             )}
           </div>
         }
-        description={dir || s.defaultsTo(fallback || '~')}
+        description={dir || s.notSet}
         title={dir ? dir : s.notSet}
       />
     </div>
