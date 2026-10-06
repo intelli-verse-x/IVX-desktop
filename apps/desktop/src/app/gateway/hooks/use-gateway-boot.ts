@@ -16,6 +16,7 @@ import type { DesktopBootProgress, HermesConnection, HermesWindowState } from '@
 import { HermesGateway } from '@/hermes'
 import { translateNow } from '@/i18n'
 import { desktopDefaultCwd } from '@/lib/desktop-fs'
+import { cleanPath, comparisonPath } from '@/lib/path-compare'
 import {
   decideLivenessForceClose,
   LIVENESS_PROBE_TIMEOUT_MS,
@@ -752,8 +753,14 @@ export function useGatewayBoot({
 
       const remoteDefault = await desktopDefaultCwd().catch(() => null)
 
-      if (shouldPublish() && remoteDefault?.cwd && !$activeSessionId.get() && !$currentCwd.get()) {
-        setCurrentCwd(remoteDefault.cwd)
+      const home =
+        (await window.hermesDesktop?.settings?.getDefaultProjectDir?.().catch(() => null))?.defaultLabel?.trim() || ''
+      const cwd = remoteDefault?.cwd?.trim() || ''
+      const isHome =
+        Boolean(cwd && home) && comparisonPath(cleanPath(cwd)) === comparisonPath(cleanPath(home))
+
+      if (shouldPublish() && cwd && !isHome && !$activeSessionId.get() && !$currentCwd.get()) {
+        setCurrentCwd(cwd)
         setCurrentBranch(remoteDefault.branch || '')
       }
     }

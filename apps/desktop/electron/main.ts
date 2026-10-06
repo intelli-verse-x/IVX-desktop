@@ -5244,7 +5244,7 @@ function sanitizeWorkspaceCwd(cwd) {
   const trimmed = typeof cwd === 'string' ? cwd.trim() : ''
 
   if (!trimmed || isPackagedInstallPath(trimmed)) {
-    return { cwd: resolveHermesCwd(), sanitized: Boolean(trimmed) }
+    return { cwd: '', sanitized: Boolean(trimmed) }
   }
 
   try {
@@ -5254,10 +5254,10 @@ function sanitizeWorkspaceCwd(cwd) {
       return { cwd: resolved, sanitized: false }
     }
   } catch {
-    // Fall through to the resolved default.
+    // Missing folders stay closed rather than falling back to the home tree.
   }
 
-  return { cwd: resolveHermesCwd(), sanitized: Boolean(trimmed) }
+  return { cwd: '', sanitized: true }
 }
 
 // Persisted "Default project directory" — surfaced as a setting in the
@@ -15899,7 +15899,8 @@ ipcMain.handle('hermes:window:openInTerminal', async (_event, sessionId, opts) =
       return { ok: false, error: 'Hermes is not installed yet' }
     }
 
-    const { cwd } = sanitizeWorkspaceCwd(opts?.cwd)
+    const { cwd: requestedCwd } = sanitizeWorkspaceCwd(opts?.cwd)
+    const cwd = requestedCwd || resolveHermesCwd()
     const scriptDir = path.join(app.getPath('userData'), 'open-in-terminal')
     fs.mkdirSync(scriptDir, { recursive: true })
 
