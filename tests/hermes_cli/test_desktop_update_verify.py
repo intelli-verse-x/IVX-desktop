@@ -40,6 +40,20 @@ def test_readable_packaged_entry_passes(bundle):
     verify.verify_windows_desktop_update(root)
 
 
+def test_ci_prebuilt_receipt_verifies_without_compiler_stamp(bundle, monkeypatch):
+    root, _, dist = bundle
+    (dist / "hermes-build.json").unlink()
+    exe_dir = root / "apps/desktop/release/fixture"
+    digest = "d" * 64
+    (exe_dir / "Hermes.exe").write_bytes(b"MZ")
+    (exe_dir / "hermes-prebuilt.json").write_text(json.dumps({
+        "schema": 1, "product": "desktop", "sourceHash": digest,
+    }), encoding="utf-8")
+    monkeypatch.setattr("hermes_cli.prebuilt_desktop.desktop_source_hash", lambda _: digest)
+    monkeypatch.setattr("hermes_cli.source_build.source_product_current", lambda *_a, **_k: False)
+    verify.verify_windows_desktop_update(root)
+
+
 @pytest.mark.parametrize('damage', ['archive', 'truncated', 'entry', 'empty-index', 'unreadable-index', 'no-module'])
 def test_current_stamp_does_not_hide_damaged_output(bundle, damage):
     root, archive, dist = bundle

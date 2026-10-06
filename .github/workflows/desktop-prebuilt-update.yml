@@ -31,6 +31,24 @@ jobs:
       - name: Pack the desktop app
         run: npm run pack --workspace apps/desktop
 
+      - name: Stamp the unpacked app
+        shell: pwsh
+        run: |
+          $hash = node scripts/build/freshness.mjs --source . --product desktop --source-hash
+          $hash = $hash.Trim().ToLower()
+          if ($hash.Length -ne 64) { throw "desktop source hash missing" }
+          $receipt = @{
+            schema = 1
+            product = "desktop"
+            sha = "${{ github.sha }}".ToLower()
+            sourceHash = $hash
+            repository = "${{ github.repository }}"
+          } | ConvertTo-Json -Compress
+          [System.IO.File]::WriteAllText(
+            (Join-Path $pwd "apps/desktop/release/win-unpacked/hermes-prebuilt.json"),
+            $receipt + "`n"
+          )
+
       - name: Zip the unpacked app
         shell: pwsh
         run: tar -a -c -f desktop-win-unpacked.zip -C apps/desktop/release win-unpacked

@@ -115,8 +115,6 @@ def build_update_products(project_root: Path, *, desktop: bool) -> None:
         from hermes_cli.prebuilt_desktop import install_prebuilt_desktop
 
         prebuilt = install_prebuilt_desktop(project_root)
-        if prebuilt:
-            print("  ✓ Using the desktop build that already passed CI")
     # A desktop-only commit still used to compile the terminal and web UIs.
     # Skip a product whose last build receipt matches this checkout.
     build_tui = "ui-tui" in frontends and not source_product_current(
