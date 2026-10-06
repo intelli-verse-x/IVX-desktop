@@ -117,16 +117,32 @@ def build_update_products(project_root: Path, *, desktop: bool) -> None:
         prebuilt = install_prebuilt_desktop(project_root)
         if prebuilt:
             print("  ✓ Using the desktop build that already passed CI")
-    env = source_build_env(explicit=True)
-    workspaces = frontends + (("apps/desktop",) if desktop and not prebuilt else ())
-    publish_stage("Updating Node dependencies")
-    prepare_source_dependencies(project_root, workspaces, env=env, explicit=True)
-    if "ui-tui" in frontends:
+    # A desktop-only commit still used to compile the terminal and web UIs.
+    # Skip a product whose last build receipt matches this checkout.
+    build_tui = "ui-tui" in frontends and not source_product_current(
+        project_root, "tui", project_root / "ui-tui" / "dist")
+    build_web = "web" in frontends and not source_product_current(
+        project_root, "web", project_root / "hermes_cli" / "web_dist")
+    build_desktop = desktop and not prebuilt
+    workspaces = tuple(
+        name for name, needed in (("ui-tui", build_tui), ("web", build_web)) if needed
+    ) + (("apps/desktop",) if build_desktop else ())
+    if workspaces:
+        env = source_build_env(explicit=True)
+        publish_stage("Updating Node dependencies")
+        prepare_source_dependencies(project_root, workspaces, env=env, explicit=True)
+    else:
+        env = None
+    if build_tui:
         publish_stage("Building the TUI")
         build_source_tui(project_root, env=env)
-    if "web" in frontends:
+    elif "ui-tui" in frontends:
+        print("  ✓ TUI already matches this commit")
+    if build_web:
         publish_stage("Building the web UI")
         build_source_web(project_root, env=env)
+    elif "web" in frontends:
+        print("  ✓ Web UI already matches this commit")
     if desktop and prebuilt:
         from hermes_cli.main_desktop import _refresh_installed_desktop_apps
 
