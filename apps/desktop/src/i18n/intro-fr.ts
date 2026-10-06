@@ -102,11 +102,11 @@ export const introFr: Translations['intro'] = {
       'Petite coquille ou gros refactoring — peu importe. Je livre du code propre aujourd’hui. Donne la tâche et au BOULOT.'
     ],
     none: [
-      'Posez une question, collez une erreur ou indiquez-moi un dépôt. Je peux lire du code, utiliser des outils et vous aider à livrer.',
-      'Décrivez la tâche avec vos mots. Je choisis les bons outils, explique mon plan et vous consulte avant les étapes risquées.',
-      'Indiquez un chemin de fichier, une traceback ou une idée brute. J’enquête, propose les étapes suivantes et garde tout réversible.',
-      'Cherchez dans le dépôt, modifiez des fichiers, lancez les tests, ouvrez des PR. Donnez-moi l’objectif, je gère la partie mécanique.',
-      'Saisissez une tâche, une question ou un extrait. Je garde en mémoire la session, cite mes sources et m’arrête pour demander en cas de doute.'
+      'Demandez n’importe quoi. Je lis les fichiers, j’utilise les outils, et je garde la prochaine étape sur cette machine.',
+      'Commencez par une question, un fichier ou un plan approximatif. J’inspecte d’abord, puis j’agis là où vous me le permettez.',
+      'Un chat pour le travail sur ce bureau — code, outils, et les tâches que vous y connectez.',
+      'Dites-moi le résultat visé. J’utilise ce qui est branché dans cette app et je vérifie avant tout risque.',
+      'Déposez une tâche, un chemin ou un point bloqué. Je travaille depuis cet espace, pas depuis une seule piste produit.'
     ]
   },
   custom: label => [
