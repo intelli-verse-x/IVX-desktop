@@ -120,8 +120,12 @@ def _desktop_build_needed(desktop_dir: Path, project_root: Path, *, source_mode:
         print("  ⚠ The packaged desktop app has no node-pty native binary; rebuilding it")
         return True
 
+    from hermes_cli.prebuilt_desktop import receipt_matches
     from hermes_cli.source_build import source_product_current
 
+    executable = None if source_mode else _desktop_packaged_executable(desktop_dir)
+    if executable is not None and receipt_matches(executable.parent, project_root):
+        return False
     return dist_dir is None or not source_product_current(project_root, "desktop", dist_dir)
 
 

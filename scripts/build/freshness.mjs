@@ -181,7 +181,13 @@ export function productCurrent({ source, product, out, prepared }) {
 if (isMain(import.meta.url)) {
   const { values } = parseArgs({ options: {
     source: { type: 'string' }, product: { type: 'string' }, out: { type: 'string' },
+    'source-hash': { type: 'boolean' },
   } })
-  if (!values.source || !values.product || !values.out) throw new Error('--source, --product and --out are required')
-  console.log(JSON.stringify(productCurrent(values)))
+  if (!values.source || !values.product) throw new Error('--source and --product are required')
+  if (values['source-hash']) {
+    console.log(sourceHash(values.source, values.product))
+  } else {
+    if (!values.out) throw new Error('--source, --product and --out are required')
+    console.log(JSON.stringify(productCurrent(values)))
+  }
 }

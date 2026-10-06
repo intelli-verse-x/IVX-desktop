@@ -5,6 +5,11 @@ When main's GitHub Action published ``desktop-<sha>``, the update downloads
 that zip and skips the local desktop build. A missing release means CI has
 not passed yet, so the update check stays quiet. Any other lookup failure
 leaves the existing local build in place.
+
+The zip is identified by desktop *source inputs* (``hermes-prebuilt.json``),
+not by git SHA and not by the local compiler receipt. A Python-only commit
+must not re-download hundreds of megabytes, and a CI zip must verify without
+a machine-local ``hermes-build.json``.
 """
 from __future__ import annotations
 
@@ -21,6 +26,7 @@ from pathlib import Path
 from hermes_cli.source_releases import OFFICIAL_REPOSITORY
 
 ASSET_NAME = "desktop-win-unpacked.zip"
+RECEIPT_NAME = "hermes-prebuilt.json"
 _UNPACKED_DIR = "win-unpacked"
 _MAX_BYTES = 800 * 1024 * 1024
 _EXE_NAMES = ("Hermes.exe", "IVX-Agency.exe")
@@ -40,6 +46,65 @@ def prebuilt_state(repository: str, sha: str) -> bool | None:
     return _asset(payload) is not None
 
 
+def live_unpacked_dir(project_root: Path) -> Path:
+    return project_root / "apps" / "desktop" / "release" / _UNPACKED_DIR
+
+
+def desktop_source_hash(project_root: Path) -> str:
+    """Hash of desktop compiler inputs. Empty when PM Node cannot read them."""
+    from pm import env_for, installed_package
+
+    installed = installed_package("node")
+    if installed is None or installed.binary is None:
+        return ""
+    script = project_root / "scripts" / "build" / "freshness.mjs"
+    try:
+        result = subprocess.run(
+            [str(installed.binary), str(script),
+             "--source", str(project_root), "--product", "desktop", "--source-hash"],
+            cwd=project_root, env=env_for("node"), capture_output=True, text=True,
+            encoding="utf-8", errors="replace", timeout=120, stdin=subprocess.DEVNULL,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    digest = result.stdout.strip().lower()
+    return digest if result.returncode == 0 and len(digest) == 64 and all(
+        c in "0123456789abcdef" for c in digest
+    ) else ""
+
+
+def receipt_matches(unpacked: Path, project_root: Path) -> bool:
+    """True when this unpacked app was installed from CI for the current desktop inputs."""
+    if not unpacked.is_dir() or not any((unpacked / name).is_file() for name in _EXE_NAMES):
+        return False
+    try:
+        payload = json.loads((unpacked / RECEIPT_NAME).read_text(encoding="utf-8-sig"))
+    except (OSError, ValueError):
+        return False
+    if not isinstance(payload, dict) or payload.get("schema") != 1 or payload.get("product") != "desktop":
+        return False
+    recorded = str(payload.get("sourceHash") or "").strip().lower()
+    current = desktop_source_hash(project_root)
+    return bool(current) and recorded == current
+
+
+def prebuilt_desktop_current(project_root: Path) -> bool:
+    return receipt_matches(live_unpacked_dir(project_root), project_root)
+
+
+def write_prebuilt_receipt(unpacked: Path, project_root: Path, sha: str) -> None:
+    digest = desktop_source_hash(project_root)
+    if not digest:
+        raise OSError("desktop source hash unavailable")
+    (unpacked / RECEIPT_NAME).write_text(json.dumps({
+        "schema": 1,
+        "product": "desktop",
+        "sha": sha,
+        "sourceHash": digest,
+        "repository": OFFICIAL_REPOSITORY,
+    }) + "\n", encoding="utf-8")
+
+
 def install_prebuilt_desktop(project_root: Path) -> bool:
     """Replace ``apps/desktop/release/win-unpacked`` from CI. False keeps the local build."""
     if os.name != "nt":
@@ -52,6 +117,9 @@ def install_prebuilt_desktop(project_root: Path) -> bool:
     repository = source_repository(["git"], project_root)
     if repository != OFFICIAL_REPOSITORY:
         return False
+    if prebuilt_desktop_current(project_root):
+        print("  ✓ Desktop app already matches this commit")
+        return True
     payload = _release_payload(repository, sha)
     asset = _asset(payload) if isinstance(payload, dict) else None
     if not asset:
@@ -66,10 +134,12 @@ def install_prebuilt_desktop(project_root: Path) -> bool:
             unpacked = _extract_unpacked(archive, Path(tmp) / "out")
             if unpacked is None:
                 return False
+            write_prebuilt_receipt(unpacked, project_root, sha)
             _replace_unpacked(project_root / "apps" / "desktop" / "release", unpacked)
     except (OSError, urllib.error.URLError, zipfile.BadZipFile) as exc:
         print(f"  ⚠ Prebuilt desktop download failed ({exc}); building locally")
         return False
+    print("  ✓ Using the desktop build that already passed CI")
     return True
 
 
@@ -144,8 +214,24 @@ def _replace_unpacked(release_dir: Path, unpacked: Path) -> None:
     if previous.exists():
         shutil.rmtree(previous)
     if live.exists():
-        os.rename(live, previous)
-    os.rename(unpacked, live)
+        _relocate(live, previous)
+    _relocate(unpacked, live)
+
+
+def _relocate(src: Path, dest: Path) -> None:
+    """Rename when the volume allows it; copy when Windows reports a cross-drive move."""
+    try:
+        os.rename(src, dest)
+        return
+    except OSError:
+        if dest.exists():
+            shutil.rmtree(dest) if dest.is_dir() else dest.unlink()
+        if src.is_dir():
+            shutil.copytree(src, dest)
+            shutil.rmtree(src)
+        else:
+            shutil.copy2(src, dest)
+            src.unlink()
 
 
 def _within(root: Path, path: Path) -> bool:
