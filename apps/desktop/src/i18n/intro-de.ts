@@ -102,11 +102,11 @@ export const introDe: Translations['intro'] = {
       'Winziger Tippfehler oder riesiges Refactoring – egal. Heute liefere ich sauberen Code. Nenn die Aufgabe und dann wird GEARBEITET.'
     ],
     none: [
-      'Stellen Sie eine Frage, fügen Sie einen Fehler ein oder zeigen Sie mir ein Repo. Ich kann Code lesen, Tools ausführen und Ihnen beim Ausliefern helfen.',
-      'Beschreiben Sie die Aufgabe in eigenen Worten. Ich wähle die passenden Tools, erkläre meinen Plan und frage vor riskanten Schritten nach.',
-      'Geben Sie einen Dateipfad, einen Traceback oder eine grobe Idee an. Ich untersuche, schlage nächste Schritte vor und halte alles umkehrbar.',
-      'Repo durchsuchen, Dateien bearbeiten, Tests ausführen, PRs öffnen. Nennen Sie das Ziel, und ich übernehme den mechanischen Teil.',
-      'Geben Sie eine Aufgabe, Frage oder ein Snippet ein. Ich merke mir die Sitzung, nenne meine Quellen und frage nach, wenn ich unsicher bin.'
+      'Fragen Sie irgendetwas. Ich lese die Dateien, nutze die Tools und halte den nächsten Schritt auf diesem Rechner.',
+      'Beginnen Sie mit einer Frage, einer Datei oder einem groben Plan. Ich prüfe zuerst, dann handle ich, wo Sie es zulassen.',
+      'Ein Chat für die Arbeit an diesem Schreibtisch — Code, Tools und die Jobs, die Sie hier anbinden.',
+      'Nennen Sie das Ziel. Ich nutze, was in dieser App verbunden ist, und frage nach, bevor etwas riskant wird.',
+      'Legen Sie eine Aufgabe, einen Pfad oder einen Hänger ab. Ich arbeite aus diesem Arbeitsbereich, nicht aus einer einzelnen Produktspur.'
     ]
   },
   custom: label => [

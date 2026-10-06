@@ -102,11 +102,11 @@ export const introEs: Translations['intro'] = {
       'Errata diminuta o refactorización enorme, da igual. Hoy entrego código limpio. Di la tarea y a TRABAJAR.'
     ],
     none: [
-      'Haz una pregunta, pega un error o indícame un repositorio. Puedo leer código, usar herramientas y ayudarte a entregar.',
-      'Describe la tarea con tus palabras. Elegiré las herramientas adecuadas, explicaré mi plan y te consultaré antes de los pasos arriesgados.',
-      'Suelta una ruta de archivo, un traceback o una idea en bruto. Investigaré, sugeriré los siguientes pasos y lo mantendré todo reversible.',
-      'Busca en el repositorio, edita archivos, ejecuta pruebas, abre PR. Dime el objetivo y yo me ocupo de la parte mecánica.',
-      'Escribe una tarea, una pregunta o un fragmento. Recuerdo la sesión, cito mis fuentes y me detengo a preguntar cuando tengo dudas.'
+      'Pregunta lo que sea. Leo los archivos, uso las herramientas y dejo el siguiente paso en esta máquina.',
+      'Empieza con una pregunta, un archivo o un plan aproximado. Primero inspecciono; luego actúo donde me dejes.',
+      'Un chat para el trabajo de este escritorio: código, herramientas y las tareas que conectes aquí.',
+      'Dime el resultado. Usaré lo conectado en esta app y consultaré antes de cualquier paso arriesgado.',
+      'Deja una tarea, una ruta o un punto atascado. Trabajo desde este espacio, no desde un solo carril de producto.'
     ]
   },
   custom: label => [
