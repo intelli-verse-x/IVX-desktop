@@ -182,7 +182,9 @@ export function VersionHero({
           <h2 className="text-lg font-semibold tracking-tight">{u.appName}</h2>
         )}
         <p className="mt-1 text-xs text-muted-foreground">
-          {version?.appVersion ? u.version(displayVersion(version.appVersion)) : u.versionUnavailable}
+          {version?.appVersion
+            ? u.version(displayVersion(version.appVersion, version.productVersion))
+            : u.versionUnavailable}
           {version?.channel
             ? ` · ${Object.entries(u.channels).find(([name]: [string, string]): boolean => name === version.channel)?.[1] ?? version.channel}`
             : ''}

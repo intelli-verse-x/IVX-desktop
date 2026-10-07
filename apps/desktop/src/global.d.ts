@@ -739,6 +739,11 @@ export interface DesktopSyncReceipt {
 export interface DesktopVersionInfo {
   /** Packaged client version, or the runtime version for source installs. */
   appVersion: string
+  /**
+   * IVX-Agency product version stamped on each desktop publish
+   * (1.0.0 → 1.0.1 → … → 1.0.5 → 1.1.0). Used when appVersion is a git sha.
+   */
+  productVersion?: string
   /** Fixed release identity. Commit builds have no update channel. */
   channel?: string | null
   electronVersion: string

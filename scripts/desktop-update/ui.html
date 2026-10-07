@@ -13,10 +13,12 @@
     apps/bootstrap-installer/src/components/loader.tsx (itself lifted from
     apps/desktop/src/components/ui/loader.tsx 'fourier-flow'). Keep the
     constants in sync if the desktop's curve is retuned.
-  - Layout: loader (size-20) + one title + one muted stage/elapsed line. No
-    progress bar, stage list, log pane, or cancel (see #75895 for the
-    arguments). Elapsed comes from the orchestrator or is omitted -- a clock
-    started here would measure when this window painted, not the update.
+  - Layout: loader (size-20) + one title + one muted stage/estimate/elapsed
+    line. No progress bar, stage list, log pane, or cancel (see #75895 for
+    the arguments). Elapsed comes from the orchestrator or is omitted -- a
+    clock started here would measure when this window painted, not the update.
+    The 7–8 minute estimate is honest for a full desktop zip; shorter when
+    only the UI bundle swaps.
   - Appearance follows the OS. Dark seeds are the installer's neutral
     charcoal (#232323 base, foreground #d6d6d6) — never brand blue.
 -->
@@ -108,7 +110,8 @@
     <div id="loader" role="status" aria-label="Updating"></div>
     <div id="glyph"></div>
     <h2 id="title">Updating Hermes</h2>
-    <p id="line">Hermes will open once done.</p>
+    <p id="line">Usually about 7–8 minutes.
+Hermes will open once done.</p>
   </div>
 <script>
   /* ── Fourier Flow loader, ported verbatim from loader.tsx ─────────────── */
@@ -207,6 +210,7 @@
   let settled = false
   let failures = 0
 
+  const ESTIMATE = 'Usually about 7–8 minutes'
   const elapsedText = s =>
     s < 60 ? `${s}s elapsed` : `${Math.floor(s / 60)}m ${s % 60}s elapsed`
 
@@ -219,11 +223,11 @@
   function apply(state) {
     if (settled) return
     if (state.status === 'running') {
-      const stage = state.message || defaultLine
+      const stage = (state.message || '').trim() || 'Hermes will open once done.'
       const elapsed = Number(state.elapsed_seconds)
       lineEl.textContent = Number.isFinite(elapsed) && elapsed >= 0
-        ? `${stage}\n${elapsedText(Math.floor(elapsed))}`
-        : stage
+        ? `${stage}\n${ESTIMATE} · ${elapsedText(Math.floor(elapsed))}`
+        : `${stage}\n${ESTIMATE}`
     } else if (state.status === 'done') {
       settle('done')
       glyphEl.textContent = '\u2713'
