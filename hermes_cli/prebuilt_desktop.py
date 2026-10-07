@@ -120,42 +120,59 @@ def prebuilt_desktop_current(project_root: Path) -> bool:
     return receipt_matches(live_unpacked_dir(project_root), project_root)
 
 
-def write_prebuilt_receipt(unpacked: Path, project_root: Path, sha: str) -> None:
+def write_prebuilt_receipt(
+    unpacked: Path, project_root: Path, sha: str, product_version: str | None = None,
+) -> None:
     digest = desktop_source_hash(project_root)
     if not digest:
         raise OSError("desktop source hash unavailable")
-    (unpacked / RECEIPT_NAME).write_text(json.dumps({
+    version = _receipt_product_version(unpacked, project_root, product_version)
+    payload = {
         "schema": 1,
         "product": "desktop",
         "sha": sha,
         "sourceHash": digest,
         "runtimeHash": unpacked_runtime_hash(unpacked),
         "repository": OFFICIAL_REPOSITORY,
-    }) + "\n", encoding="utf-8")
+    }
+    if version:
+        payload["productVersion"] = version
+    (unpacked / RECEIPT_NAME).write_text(json.dumps(payload) + "\n", encoding="utf-8")
 
 
-def stamp_ci_unpacked(unpacked: Path, sha: str, source_hash: str, repository: str) -> None:
+def stamp_ci_unpacked(
+    unpacked: Path, sha: str, source_hash: str, repository: str, product_version: str,
+) -> None:
     """Write the CI receipt using the already-computed desktop source hash."""
     digest = source_hash.strip().lower()
     if len(digest) != 64 or any(c not in "0123456789abcdef" for c in digest):
         raise OSError("desktop source hash missing")
+    from hermes_cli.product_version import parse_product_version
+
+    version = product_version.strip()
+    if parse_product_version(version) is None:
+        raise OSError("desktop product version missing")
     (unpacked / RECEIPT_NAME).write_text(json.dumps({
         "schema": 1,
         "product": "desktop",
         "sha": sha.strip().lower(),
         "sourceHash": digest,
         "runtimeHash": unpacked_runtime_hash(unpacked),
+        "productVersion": version,
         "repository": repository,
     }) + "\n", encoding="utf-8")
 
 
-def write_prebuilt_meta(unpacked: Path, dest: Path, sha: str, source_hash: str, repository: str) -> None:
+def write_prebuilt_meta(
+    unpacked: Path, dest: Path, sha: str, source_hash: str, repository: str, product_version: str,
+) -> None:
     dest.write_text(json.dumps({
         "schema": 1,
         "product": "desktop",
         "sha": sha.strip().lower(),
         "sourceHash": source_hash.strip().lower(),
         "runtimeHash": unpacked_runtime_hash(unpacked),
+        "productVersion": product_version.strip(),
         "repository": repository,
     }) + "\n", encoding="utf-8")
 
@@ -172,12 +189,44 @@ def pack_app_bundle(unpacked: Path, dest: Path) -> None:
 
 
 def publish_ci_artifacts(
-    unpacked: Path, sha: str, source_hash: str, repository: str, dest_dir: Path,
+    unpacked: Path,
+    sha: str,
+    source_hash: str,
+    repository: str,
+    dest_dir: Path,
+    product_version: str,
 ) -> None:
     dest_dir.mkdir(parents=True, exist_ok=True)
-    stamp_ci_unpacked(unpacked, sha, source_hash, repository)
-    write_prebuilt_meta(unpacked, dest_dir / META_ASSET, sha, source_hash, repository)
+    stamp_ci_unpacked(unpacked, sha, source_hash, repository, product_version)
+    write_prebuilt_meta(unpacked, dest_dir / META_ASSET, sha, source_hash, repository, product_version)
     pack_app_bundle(unpacked, dest_dir / APP_ASSET)
+
+
+def live_product_version(project_root: Path) -> str:
+    """Product version from the installed prebuilt receipt, else the seed file."""
+    from hermes_cli.product_version import parse_product_version, read_seed_product_version
+
+    receipt = _read_receipt(live_unpacked_dir(project_root))
+    recorded = str((receipt or {}).get("productVersion") or "").strip()
+    if parse_product_version(recorded):
+        return recorded
+    return read_seed_product_version(project_root)
+
+
+def _receipt_product_version(
+    unpacked: Path, project_root: Path, product_version: str | None,
+) -> str:
+    from hermes_cli.product_version import parse_product_version, read_seed_product_version
+
+    for candidate in (
+        product_version,
+        str((_read_receipt(unpacked) or {}).get("productVersion") or "").strip(),
+        read_seed_product_version(project_root),
+    ):
+        value = str(candidate or "").strip()
+        if parse_product_version(value):
+            return value
+    return ""
 
 
 def install_prebuilt_desktop(project_root: Path) -> bool:

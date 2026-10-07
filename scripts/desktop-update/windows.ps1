@@ -376,7 +376,9 @@ function Get-UiElapsedText {
 }
 
 function Get-UiProgressLine {
-    return "$script:UiStage`r`n$(Get-UiElapsedText)"
+    # Estimate matches ui.html: a full desktop zip is often 7–8 min; shorter
+    # when only the UI bundle swaps. Elapsed proves the hand-off is still alive.
+    return "$script:UiStage`r`nUsually about 7-8 minutes · $(Get-UiElapsedText)"
 }
 
 function Publish-UiProgress([string]$Message) {
@@ -463,26 +465,26 @@ function Show-ProgressWindow {
         $form.MaximizeBox = $false
         $form.MinimizeBox = $false
         $form.ControlBox = $false
-        $form.ClientSize = New-Object System.Drawing.Size(280, 320)
+        $form.ClientSize = New-Object System.Drawing.Size(280, 336)
         $form.StartPosition = "CenterScreen"
         $form.BackColor = $back
 
         $bar = New-Object System.Windows.Forms.ProgressBar
         $bar.Style = "Marquee"
         $bar.MarqueeAnimationSpeed = 30
-        $bar.SetBounds(60, 128, 160, 8)
+        $bar.SetBounds(60, 120, 160, 8)
         $title = New-Object System.Windows.Forms.Label
         $title.Text = "Updating Hermes"
         $title.Font = New-Object System.Drawing.Font("Segoe UI Semibold", 12)
         $title.ForeColor = $fore
         $title.TextAlign = "MiddleCenter"
-        $title.SetBounds(16, 156, 248, 28)
+        $title.SetBounds(16, 148, 248, 28)
         $sub = New-Object System.Windows.Forms.Label
         $sub.Text = Get-UiProgressLine
         $sub.Font = New-Object System.Drawing.Font("Segoe UI", 9)
         $sub.ForeColor = $mute
         $sub.TextAlign = "TopCenter"
-        $sub.SetBounds(24, 190, 232, 48)
+        $sub.SetBounds(24, 182, 232, 64)
         $form.Controls.Add($bar)
         $form.Controls.Add($title)
         $form.Controls.Add($sub)

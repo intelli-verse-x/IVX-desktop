@@ -54,6 +54,7 @@ import {
   nativeAboutVersion,
   packagedReleaseChannel
 } from './app-version'
+import { resolveProductVersion } from './product-version'
 import { runAppInstallerChecker } from './appinstaller-checker'
 import { installApplicationMenuAfterFirstWindow } from './application-menu-startup'
 import { stopBackendChild as stopBackendChildImpl, waitForBackendExit } from './backend-child'
@@ -18762,10 +18763,13 @@ async function detectRendererSkew() {
 // other platforms don't use this menu item.
 function showAboutPanelFresh(): void {
   void Promise.all([detectRendererSkew(), resolveHermesVersion()]).then(([skew, version]) => {
+    const productVersion = resolveProductVersion(resolveUpdateRoot())
     const info: AppVersionInfo = appVersionInfo(INSTALL_STAMP, version, app.getVersion())
     // The product name already identifies canary and commit builds. Never pass
     // through empty/placeholder: the panel would render the bundle's 0.0.0 (#124581).
-    const display: string = nativeAboutVersion(info)
+    // Source installs report git.<sha>; About shows the IVX product version instead.
+    const raw = nativeAboutVersion(info)
+    const display = /^git\./i.test(raw) ? productVersion : raw
     app.setAboutPanelOptions({
       applicationName: APP_NAME,
       applicationVersion: skew.outOfSync ? `${display} — app build out of date, update the desktop app` : display,
@@ -18780,6 +18784,7 @@ ipcMain.handle('hermes:version', async (_event, scope?: { connectionId?: string;
 
   return {
     ...appVersionInfo(INSTALL_STAMP, version, app.getVersion()),
+    productVersion: resolveProductVersion(resolveUpdateRoot()),
     electronVersion: process.versions.electron,
     nodeVersion: process.versions.node,
     platform: process.platform,

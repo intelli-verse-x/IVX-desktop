@@ -251,12 +251,13 @@ def test_ci_artifacts_include_meta_and_app_zip(tmp_path: Path):
     (resources / "index.js").write_text("ui", encoding="utf-8")
     dest = tmp_path / "out"
     digest = "b" * 64
-    publish_ci_artifacts(unpacked, "A" * 40, digest, "intelli-verse-x/IVX-desktop", dest)
+    publish_ci_artifacts(unpacked, "A" * 40, digest, "intelli-verse-x/IVX-desktop", dest, "1.0.3")
     receipt = json.loads((unpacked / RECEIPT_NAME).read_text(encoding="utf-8"))
     meta = json.loads((dest / META_ASSET).read_text(encoding="utf-8"))
     assert receipt["runtimeHash"] == unpacked_runtime_hash(unpacked)
     assert meta["runtimeHash"] == receipt["runtimeHash"]
     assert meta["sourceHash"] == digest
+    assert receipt["productVersion"] == meta["productVersion"] == "1.0.3"
     with zipfile.ZipFile(dest / APP_ASSET) as bundle:
         names = set(bundle.namelist())
     assert "resources/app.asar" in names

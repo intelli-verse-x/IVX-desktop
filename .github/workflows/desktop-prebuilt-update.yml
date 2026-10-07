@@ -28,12 +28,28 @@ jobs:
       - name: Install Node workspaces
         run: npm ci
 
-      - name: Pack the desktop app
-        run: npm run pack --workspace apps/desktop
-
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
+
+      - name: Bump product version for this publish
+        id: product_version
+        shell: pwsh
+        env:
+          PYTHONPATH: .
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = python -c @"
+          from pathlib import Path
+          from hermes_cli.product_version import prepare_ci_product_version
+          print(prepare_ci_product_version(Path('.'), '${{ github.repository }}'), end='')
+          "@
+          if (-not $version) { throw "product version missing" }
+          Write-Host "product version $version"
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Pack the desktop app
+        run: npm run pack --workspace apps/desktop
 
       - name: Stamp and pack update assets
         shell: pwsh
@@ -43,6 +59,7 @@ jobs:
           $hash = node scripts/build/freshness.mjs --source . --product desktop --source-hash
           $hash = $hash.Trim().ToLower()
           if ($hash.Length -ne 64) { throw "desktop source hash missing" }
+          $version = "${{ steps.product_version.outputs.version }}"
           python -c @"
           from pathlib import Path
           from hermes_cli.prebuilt_desktop import publish_ci_artifacts
@@ -52,6 +69,7 @@ jobs:
               '$hash',
               '${{ github.repository }}',
               Path('.'),
+              '$version',
           )
           "@
           tar -a -c -f desktop-win-unpacked.zip -C apps/desktop/release win-unpacked
@@ -60,4 +78,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
-        run: gh release create "desktop-${{ github.sha }}" desktop-win-unpacked.zip desktop-win-app.zip desktop-win-meta.json --repo "${{ github.repository }}" --target "${{ github.sha }}" --prerelease --title "Desktop update ${{ github.sha }}" --notes "Full Windows unpack plus a UI-only app bundle when Electron is unchanged."
+        run: gh release create "desktop-${{ github.sha }}" desktop-win-unpacked.zip desktop-win-app.zip desktop-win-meta.json --repo "${{ github.repository }}" --target "${{ github.sha }}" --prerelease --title "Desktop update ${{ steps.product_version.outputs.version }} (${{ github.sha }})" --notes "IVX-Agency ${{ steps.product_version.outputs.version }}. Full Windows unpack plus a UI-only app bundle when Electron is unchanged."
