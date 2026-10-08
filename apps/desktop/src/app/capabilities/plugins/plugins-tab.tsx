@@ -563,6 +563,7 @@ export const PluginsTab = memo(function PluginsTab({
   const { requestGateway } = useGatewayRequest()
 
   const desktopRecords = useStore($pluginRecords)
+  const capabilitiesOpen = capabilitiesUnlocked(useStore($brandSession))
   const agentRows = useStore($agentPlugins)
   const status = useStore($agentPluginsStatus)
   const error = useStore($agentPluginsError)
@@ -750,7 +751,25 @@ export const PluginsTab = memo(function PluginsTab({
       installedEntries={installedEntries}
       installedPending={status !== 'ready'}
       isInstalled={isInstalled}
+      isLocked={entry => {
+        if (capabilitiesOpen) {
+          return false
+        }
+
+        const pkg = packageById.get(entry.id)
+
+        if (!pkg) {
+          return true
+        }
+
+        return !freeListAllowed(
+          packages.map(row => row.name),
+          pkg.name,
+          false
+        )
+      }}
       kind="plugins"
+      lockedLabel={FREE_LOCK_MESSAGE}
       matchInstalled={matchInstalled}
       notice={notice}
       onInstall={entry => openCatalogPluginInstall(entry, scope)}

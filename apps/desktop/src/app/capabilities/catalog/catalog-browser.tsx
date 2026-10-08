@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils'
 
 import { DetailColumn, ListColumn, MasterDetail } from '../../master-detail'
 import { PanelEmpty } from '../../overlays/panel'
+import { LockFog, useLockFogTop } from '../lock-fog'
 
 import { CatalogAlert } from './catalog-alert'
 import { CatalogCard } from './catalog-card'
@@ -57,6 +58,9 @@ interface CatalogBrowserProps {
   notice?: ReactNode
   renderInstalledDetail?: (entry: CatalogEntry) => ReactNode
   renderInstalledAction?: (entry: CatalogEntry) => ReactNode
+  /** Free-plan gate: unlocked entries stay interactive; the rest sit under one page blur + lock. */
+  isLocked?: (entry: CatalogEntry) => boolean
+  lockedLabel?: string
   selectedEntryId?: string | null
 }
 
@@ -123,6 +127,8 @@ export const CatalogBrowser = memo(function CatalogBrowser({
   notice,
   renderInstalledDetail,
   renderInstalledAction,
+  isLocked,
+  lockedLabel,
   selectedEntryId,
   query,
   onQueryChange
@@ -179,10 +185,23 @@ export const CatalogBrowser = memo(function CatalogBrowser({
       ? groupCatalogPlugins(filtered).map(([key, items]) => ({ key, ...PLUGIN_CATEGORIES[key], entries: items }))
       : []
 
-  const pageOrder = sections.length ? sections.flatMap(section => section.entries) : filtered
+  const freeEntries = isLocked ? filtered.filter(entry => !isLocked(entry)) : filtered
+  const lockedEntries = isLocked ? filtered.filter(entry => isLocked(entry)) : []
+  const lockedBehind = Boolean(isLocked) && lockedEntries.length > 0
+  const { freeAnchor, fogTop } = useLockFogTop(
+    lockedBehind,
+    `${freeEntries.length}:${cardView ? 'card' : 'list'}:${deferredQuery}`
+  )
 
-  const selected = visible.find(entry => entry.id === selectedId) ?? filtered[0]
-  const related = selected && (!cardView || detailOpen) ? relatedEntries(filtered, selected, 3) : []
+  const pageOrder = lockedBehind
+    ? freeEntries
+    : sections.length
+      ? sections.flatMap(section => section.entries)
+      : filtered
+
+  const selected = pageOrder.find(entry => entry.id === selectedId) ?? pageOrder[0] ?? filtered[0]
+  const related = selected && (!cardView || detailOpen) ? relatedEntries(pageOrder, selected, 3) : []
+  const lockTip = lockedLabel || 'Upgrade to unlock more'
 
   const searchFor = (value: string) => {
     onQueryChange?.(value)
@@ -195,12 +214,20 @@ export const CatalogBrowser = memo(function CatalogBrowser({
   }
 
   const openEntry = (entry: CatalogEntry) => {
+    if (isLocked?.(entry)) {
+      return
+    }
+
     setSelectedId(entry.id)
     setDetailOpen(true)
   }
 
   // Installed entries get the owner's on/off switch; the rest install one-way.
   const entryAction = (entry: CatalogEntry) => {
+    if (isLocked?.(entry)) {
+      return null
+    }
+
     const custom = renderInstalledAction?.(entry)
 
     if (custom) {
@@ -362,60 +389,84 @@ export const CatalogBrowser = memo(function CatalogBrowser({
             ) : cardView ? (
               <>
                 <div className="flex h-full min-h-0 flex-col px-3 pb-3" data-catalog-cards={kind}>
-                  <div
-                    className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]"
-                    data-catalog-scroll
-                    key={`${filterKey}:${sort}:${deferredQuery}:${facets.installedOnly}`}
-                  >
-                    {discover ? (
-                      <div className="space-y-7 py-3">
-                        {sections.map((section, sectionIndex) => (
-                          <section className="space-y-3" data-catalog-section={section.key} key={section.key}>
-                            <header className="flex items-center justify-between gap-3">
-                              <h3 className="flex items-baseline gap-2 text-sm font-semibold">
-                                <Button
-                                  className="text-sm font-semibold text-(--ui-text-primary)"
-                                  onClick={() => filters.chooseCategory(section.key)}
-                                  size="inline"
-                                  variant="text"
-                                >
-                                  {section.label}
-                                </Button>
-                                <span className="text-xs font-normal text-(--ui-text-tertiary)">
-                                  {compactNumber(section.entries.length)}
-                                </span>
-                              </h3>
-                              <Button onClick={() => filters.chooseCategory(section.key)} size="inline" variant="text">
-                                {c.seeAll}
-                                <Codicon name="arrow-right" />
-                              </Button>
-                            </header>
-                            <p className="text-xs text-(--ui-text-tertiary)">{section.blurb}</p>
-                            <Reel className="*:w-68" data-catalog-hover-group>
-                              {section.entries
-                                .slice(0, SHELF_SIZE)
-                                .map((entry, index) => card(entry, sectionIndex * SHELF_SIZE + index))}
-                            </Reel>
-                          </section>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="py-2">
-                        {CATALOG_MASONRY ? (
-                          <Masonry data-catalog-hover-group>{filtered.slice(0, limit).map(card)}</Masonry>
-                        ) : (
+                  {lockedBehind ? (
+                    <div
+                      className="relative min-h-0 flex-1 overflow-hidden"
+                      data-catalog-scroll
+                      key={`${filterKey}:${sort}:${deferredQuery}:gated`}
+                    >
+                      <div className="h-full overflow-hidden py-2">
+                        <div ref={freeAnchor}>
                           <div className="catalog-grid" data-catalog-hover-group>
-                            {filtered.slice(0, limit).map(card)}
+                            {freeEntries.map(card)}
                           </div>
-                        )}
-                        {filtered.length > limit && (
-                          <Button onClick={() => setLimit(value => value + PAGE_SIZE)} size="sm" variant="text">
-                            {c.more}
-                          </Button>
-                        )}
+                        </div>
+                        <div className="catalog-grid mt-3" data-catalog-hover-group>
+                          {lockedEntries.slice(0, 18).map((entry, index) => card(entry, freeEntries.length + index))}
+                        </div>
                       </div>
-                    )}
-                  </div>
+                      {fogTop > 0 ? (
+                        <div className="absolute inset-x-0 bottom-0" style={{ top: fogTop }}>
+                          <LockFog label={lockTip} />
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <div
+                      className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]"
+                      data-catalog-scroll
+                      key={`${filterKey}:${sort}:${deferredQuery}:${facets.installedOnly}`}
+                    >
+                      {discover ? (
+                        <div className="space-y-7 py-3">
+                          {sections.map((section, sectionIndex) => (
+                            <section className="space-y-3" data-catalog-section={section.key} key={section.key}>
+                              <header className="flex items-center justify-between gap-3">
+                                <h3 className="flex items-baseline gap-2 text-sm font-semibold">
+                                  <Button
+                                    className="text-sm font-semibold text-(--ui-text-primary)"
+                                    onClick={() => filters.chooseCategory(section.key)}
+                                    size="inline"
+                                    variant="text"
+                                  >
+                                    {section.label}
+                                  </Button>
+                                  <span className="text-xs font-normal text-(--ui-text-tertiary)">
+                                    {compactNumber(section.entries.length)}
+                                  </span>
+                                </h3>
+                                <Button onClick={() => filters.chooseCategory(section.key)} size="inline" variant="text">
+                                  {c.seeAll}
+                                  <Codicon name="arrow-right" />
+                                </Button>
+                              </header>
+                              <p className="text-xs text-(--ui-text-tertiary)">{section.blurb}</p>
+                              <Reel className="*:w-68" data-catalog-hover-group>
+                                {section.entries
+                                  .slice(0, SHELF_SIZE)
+                                  .map((entry, index) => card(entry, sectionIndex * SHELF_SIZE + index))}
+                              </Reel>
+                            </section>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="py-2">
+                          {CATALOG_MASONRY ? (
+                            <Masonry data-catalog-hover-group>{filtered.slice(0, limit).map(card)}</Masonry>
+                          ) : (
+                            <div className="catalog-grid" data-catalog-hover-group>
+                              {filtered.slice(0, limit).map(card)}
+                            </div>
+                          )}
+                          {filtered.length > limit && (
+                            <Button onClick={() => setLimit(value => value + PAGE_SIZE)} size="sm" variant="text">
+                              {c.more}
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <CatalogDetailDialog
                   onOpenChange={setDetailOpen}
@@ -434,23 +485,63 @@ export const CatalogBrowser = memo(function CatalogBrowser({
               >
                 <MasterDetail resizeId="capabilities-split" split="wide">
                   <ListColumn key={`${filterKey}:${deferredQuery}`}>
-                    {filtered.slice(0, limit).map(entry => (
-                      <CatalogListRow
-                        entry={entry}
-                        installed={isInstalled(entry)}
-                        key={entry.id}
-                        kind={kind}
-                        onCategory={filters.chooseCategory}
-                        onOpen={openEntry}
-                        onSearch={searchFor}
-                        onTag={filters.toggleTag}
-                        selected={entry.id === selected.id}
-                      />
-                    ))}
-                    {filtered.length > limit && (
-                      <Button onClick={() => setLimit(value => value + PAGE_SIZE)} size="sm" variant="text">
-                        {c.more}
-                      </Button>
+                    {lockedBehind ? (
+                      <div className="relative min-h-full">
+                        <div ref={freeAnchor}>
+                          {freeEntries.map(entry => (
+                            <CatalogListRow
+                              entry={entry}
+                              installed={isInstalled(entry)}
+                              key={entry.id}
+                              kind={kind}
+                              onCategory={filters.chooseCategory}
+                              onOpen={openEntry}
+                              onSearch={searchFor}
+                              onTag={filters.toggleTag}
+                              selected={entry.id === selected.id}
+                            />
+                          ))}
+                        </div>
+                        {lockedEntries.slice(0, 24).map(entry => (
+                          <CatalogListRow
+                            entry={entry}
+                            installed={isInstalled(entry)}
+                            key={entry.id}
+                            kind={kind}
+                            onCategory={filters.chooseCategory}
+                            onOpen={openEntry}
+                            onSearch={searchFor}
+                            onTag={filters.toggleTag}
+                            selected={false}
+                          />
+                        ))}
+                        {fogTop > 0 ? (
+                          <div className="absolute inset-x-0 bottom-0" style={{ top: fogTop }}>
+                            <LockFog label={lockTip} />
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <>
+                        {filtered.slice(0, limit).map(entry => (
+                          <CatalogListRow
+                            entry={entry}
+                            installed={isInstalled(entry)}
+                            key={entry.id}
+                            kind={kind}
+                            onCategory={filters.chooseCategory}
+                            onOpen={openEntry}
+                            onSearch={searchFor}
+                            onTag={filters.toggleTag}
+                            selected={entry.id === selected.id}
+                          />
+                        ))}
+                        {filtered.length > limit && (
+                          <Button onClick={() => setLimit(value => value + PAGE_SIZE)} size="sm" variant="text">
+                            {c.more}
+                          </Button>
+                        )}
+                      </>
                     )}
                   </ListColumn>
                   <DetailColumn footer={c.snapshotHint}>

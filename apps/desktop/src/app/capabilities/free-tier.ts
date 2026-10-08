@@ -15,7 +15,7 @@ export function freeListAllowed(ids: readonly string[], id: string, unlocked: bo
 }
 
 export const FREE_LOCK_MESSAGE =
-  'This stays locked until a super admin unlocks the desktop app for this brand.'
+  'Pay to unlock all skills, tools, connectors, and plugins for this brand. After payment, a super admin turns desktop access on.'
 
 export function freeConnectorAllowed(connectorId: string, unlocked: boolean): boolean {
   if (unlocked) {

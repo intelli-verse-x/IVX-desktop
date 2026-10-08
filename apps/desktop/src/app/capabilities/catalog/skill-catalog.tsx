@@ -1,3 +1,4 @@
+import { useStore } from '@nanostores/react'
 import { useQuery } from '@tanstack/react-query'
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
@@ -5,10 +6,12 @@ import { capabilityScoped } from '@/api/client'
 import { Loader } from '@/components/ui/loader'
 import { getOfficialSkills, type ProfileScope, profileScopeKey } from '@/hermes'
 import { useI18n } from '@/i18n'
+import { $brandSession, capabilitiesUnlocked } from '@/store/brand-session'
 import { HUB_SOURCES_KEY, installHubSkill, notifyHubActionFailed, OFFICIAL_SKILLS_KEY } from '@/store/hub-actions'
 import { notify } from '@/store/notifications'
 import type { SkillHubSourcesResponse, SkillInfo } from '@/types/hermes'
 
+import { FREE_LOCK_MESSAGE, freeListAllowed } from '../free-tier'
 import { catalogSourceFor } from '../skills/skill-provenance'
 
 import { CatalogAlert } from './catalog-alert'
@@ -46,6 +49,7 @@ function ScopedSkillCatalog({
 }: SkillCatalogProps) {
   const { t } = useI18n()
   const h = t.skills.hub
+  const unlocked = capabilitiesUnlocked(useStore($brandSession))
   const mounted = useRef(true)
   const pending = useRef(new Set<string>())
   const [installing, setInstalling] = useState<ReadonlySet<string>>(new Set())
@@ -235,6 +239,27 @@ function ScopedSkillCatalog({
     [catalog]
   )
 
+  const skillNames = useMemo(() => skills.map(skill => skill.name), [skills])
+  const isLocked = useCallback(
+    (entry: CatalogEntry) => {
+      if (unlocked) {
+        return false
+      }
+
+      const skill =
+        catalog.skillsById.get(entry.id) ??
+        catalog.skillsByName.get(entry.name) ??
+        catalog.matchInstalled(entry)
+
+      if (!skill) {
+        return true
+      }
+
+      return !freeListAllowed(skillNames, skill.name, false)
+    },
+    [catalog, skillNames, unlocked]
+  )
+
   const installIdentifier = (entry: CatalogEntry) => catalog.officialFor(entry)?.identifier ?? entry.installIdentifier
 
   const identityPending = hasHubSkills && (hubPending || Boolean(hubError))
@@ -271,6 +296,8 @@ function ScopedSkillCatalog({
       installedPending={installedPending || identityPending}
       isInstalled={isInstalled}
       isInstalling={entry => installing.has(installIdentifier(entry) ?? '')}
+      isLocked={isLocked}
+      lockedLabel={FREE_LOCK_MESSAGE}
       isSuperseded={isSuperseded}
       kind="skills"
       matchInstalled={catalog.matchInstalled}
