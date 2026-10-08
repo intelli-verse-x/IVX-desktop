@@ -256,10 +256,19 @@ export function ConnectorsTab({ gateway, profile }: ConnectorsTabProps) {
         cards={cards}
         filter={filter}
         hostedFailed={hosted.phase === 'failed'}
+        isLocked={card => !freeConnectorAllowed(card.slug, capabilitiesUnlocked(brand))}
+        lockedLabel={FREE_LOCK_MESSAGE}
         loading={(hosted.phase === 'loading' || mcp.configLoading || mcp.catalogLoading) && cards.length === 0}
         notices={<HostedNotice hasGuest={freeTier?.has_guest === true} phase={hosted.phase} />}
         onFilterChange={setFilter}
-        onOpen={card => setOpenKey(cardKey(card))}
+        onOpen={card => {
+          if (!freeConnectorAllowed(card.slug, capabilitiesUnlocked(brand))) {
+            notify({ kind: 'info', title: 'Locked', message: FREE_LOCK_MESSAGE })
+            return
+          }
+
+          setOpenKey(cardKey(card))
+        }}
         onPrefetch={card => {
           if (card.ways.hosted) {
             prefetchConnectorTools(profile, card.slug)

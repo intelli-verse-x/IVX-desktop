@@ -24,6 +24,7 @@ import {
 } from '../../master-detail'
 import { asText, toolNames, toolsetDisplayLabel } from '../../settings/helpers'
 import { FREE_LOCK_MESSAGE, freeListAllowed } from '../free-tier'
+import { LockFog, useLockFogTop } from '../lock-fog'
 import { CapabilityEmpty, SortButton } from '../primitives'
 
 import { useToolCalls } from './tool-calls'
@@ -74,20 +75,36 @@ export function ToolsetsTab({ profile, query, toolsets }: ToolsetsTabProps) {
   // current query would be a lie.
   const bulkToolsets = useMemo(() => toolsets.filter(ts => isDesktopToolsetVisible(ts.name)), [toolsets])
 
-  // Keep a valid selection: fall back to the first visible row when the
-  // current selection is filtered out (or nothing is selected yet).
-  const activeToolset = useMemo(
-    () => visibleToolsets.find(ts => ts.name === selectedToolset) ?? visibleToolsets[0] ?? null,
-    [selectedToolset, visibleToolsets]
-  )
-
   // Single toggles are optimistic and silent on success (the row repaints
   // immediately — a toast per flip would spam rapid customization). Errors
   // revert and notify.
   const unlocked = capabilitiesUnlocked(useStore($brandSession))
+  const allNames = useMemo(() => toolsets.map(row => row.name), [toolsets])
+  const isRowLocked = useCallback(
+    (name: string) => !freeListAllowed(allNames, name, unlocked),
+    [allNames, unlocked]
+  )
+  const freeToolsets = useMemo(
+    () => (unlocked ? visibleToolsets : visibleToolsets.filter(ts => !isRowLocked(ts.name))),
+    [isRowLocked, unlocked, visibleToolsets]
+  )
+  const lockedToolsets = useMemo(
+    () => (unlocked ? [] : visibleToolsets.filter(ts => isRowLocked(ts.name))),
+    [isRowLocked, unlocked, visibleToolsets]
+  )
+  const lockedBehind = lockedToolsets.length > 0
+  const { freeAnchor, fogTop } = useLockFogTop(lockedBehind, `${freeToolsets.length}:${query}`)
+  const selectableToolsets = lockedBehind ? freeToolsets : visibleToolsets
+
+  // Keep a valid selection: fall back to the first visible row when the
+  // current selection is filtered out (or nothing is selected yet).
+  const activeToolset = useMemo(
+    () => selectableToolsets.find(ts => ts.name === selectedToolset) ?? selectableToolsets[0] ?? null,
+    [selectedToolset, selectableToolsets]
+  )
 
   async function handleToggleToolset(toolset: ToolsetInfo, enabled: boolean) {
-    if (enabled && !freeListAllowed(toolsets.map(row => row.name), toolset.name, unlocked)) {
+    if (enabled && isRowLocked(toolset.name)) {
       notify({ kind: 'info', title: 'Locked', message: FREE_LOCK_MESSAGE })
       return
     }
@@ -138,12 +155,12 @@ export function ToolsetsTab({ profile, query, toolsets }: ToolsetsTabProps) {
 
   // One switch line covering enable-all/disable-all.
   const bulkSwitch: ListStripMenuToggle = {
-    checked: bulkToolsets.length > 0 && bulkToolsets.every(ts => ts.enabled),
+    checked: bulkToolsets.length > 0 && bulkToolsets.every(ts => ts.enabled || isRowLocked(ts.name)),
     disabled: bulkBusy,
     label: t.skills.all,
     onToggle: checked =>
       void bulkApply(
-        bulkToolsets.filter(row => row.enabled !== checked),
+        bulkToolsets.filter(row => row.enabled !== checked && (!checked || !isRowLocked(row.name))),
         checked
       )
   }
@@ -162,33 +179,97 @@ export function ToolsetsTab({ profile, query, toolsets }: ToolsetsTabProps) {
           />
         }
       >
-        {visibleToolsets.map(toolset => {
-          const label = toolsetDisplayLabel(toolset)
-          const calls = toolCalls ? toolsetCalls(toolset, toolCalls) : null
+        {lockedBehind ? (
+          <div className="relative min-h-full">
+            <div ref={freeAnchor}>
+              {freeToolsets.map(toolset => {
+                const label = toolsetDisplayLabel(toolset)
+                const calls = toolCalls ? toolsetCalls(toolset, toolCalls) : null
 
-          return (
-            <CapRow
-              active={activeToolset?.name === toolset.name}
-              busy={bulkBusy}
-              enabled={toolset.enabled}
-              key={toolset.name}
-              meta={
-                calls === null ? (
-                  <CountSkeleton />
-                ) : calls > 0 ? (
-                  `×${compactNumber(calls)}`
-                ) : (
-                  `${toolNames(toolset).length} tools`
+                return (
+                  <CapRow
+                    active={activeToolset?.name === toolset.name}
+                    busy={bulkBusy}
+                    enabled={toolset.enabled}
+                    key={toolset.name}
+                    meta={
+                      calls === null ? (
+                        <CountSkeleton />
+                      ) : calls > 0 ? (
+                        `×${compactNumber(calls)}`
+                      ) : (
+                        `${toolNames(toolset).length} tools`
+                      )
+                    }
+                    onSelect={() => setSelectedToolset(toolset.name)}
+                    onToggle={checked => void handleToggleToolset(toolset, checked)}
+                    subtitle={asText(toolset.description)}
+                    title={label}
+                    toggleLabel={t.skills.toggleToolset(label, !toolset.enabled)}
+                  />
                 )
-              }
-              onSelect={() => setSelectedToolset(toolset.name)}
-              onToggle={checked => void handleToggleToolset(toolset, checked)}
-              subtitle={asText(toolset.description)}
-              title={label}
-              toggleLabel={t.skills.toggleToolset(label, !toolset.enabled)}
-            />
-          )
-        })}
+              })}
+            </div>
+            {lockedToolsets.map(toolset => {
+              const label = toolsetDisplayLabel(toolset)
+              const calls = toolCalls ? toolsetCalls(toolset, toolCalls) : null
+
+              return (
+                <CapRow
+                  active={false}
+                  busy
+                  enabled={false}
+                  key={toolset.name}
+                  meta={
+                    calls === null ? (
+                      <CountSkeleton />
+                    ) : calls > 0 ? (
+                      `×${compactNumber(calls)}`
+                    ) : (
+                      `${toolNames(toolset).length} tools`
+                    )
+                  }
+                  onSelect={() => undefined}
+                  subtitle={asText(toolset.description)}
+                  title={label}
+                />
+              )
+            })}
+            {fogTop > 0 ? (
+              <div className="absolute inset-x-0 bottom-0" style={{ top: fogTop }}>
+                <LockFog label={FREE_LOCK_MESSAGE} />
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          visibleToolsets.map(toolset => {
+            const label = toolsetDisplayLabel(toolset)
+            const calls = toolCalls ? toolsetCalls(toolset, toolCalls) : null
+
+            return (
+              <CapRow
+                active={activeToolset?.name === toolset.name}
+                busy={bulkBusy}
+                enabled={toolset.enabled}
+                key={toolset.name}
+                meta={
+                  calls === null ? (
+                    <CountSkeleton />
+                  ) : calls > 0 ? (
+                    `×${compactNumber(calls)}`
+                  ) : (
+                    `${toolNames(toolset).length} tools`
+                  )
+                }
+                onSelect={() => setSelectedToolset(toolset.name)}
+                onToggle={checked => void handleToggleToolset(toolset, checked)}
+                subtitle={asText(toolset.description)}
+                title={label}
+                toggleLabel={t.skills.toggleToolset(label, !toolset.enabled)}
+              />
+            )
+          })
+        )}
       </ListColumn>
       <DetailColumn footer={t.skills.changesApplyNewSessions}>
         {activeToolset && (

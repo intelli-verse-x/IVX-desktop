@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react'
+import { type ReactNode, useMemo } from 'react'
 
 import { PanelEmpty } from '@/app/overlays/panel'
 import { Button } from '@/components/ui/button'
@@ -6,6 +6,8 @@ import { ErrorBanner } from '@/components/ui/error-state'
 import { SearchField } from '@/components/ui/search-field'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { useI18n } from '@/i18n'
+
+import { LockFog, useLockFogTop } from '../lock-fog'
 
 import { ConnectorRowCard } from './connector-row-card'
 import { cardKey, EMPTY_CONNECTORS_FILTER } from './derive'
@@ -19,6 +21,9 @@ export interface ConnectorsDirectoryProps {
   cards: ConnectorCardModel[]
   filter: ConnectorsFilter
   hostedFailed?: boolean
+  /** Free-plan gate: free cards stay clear; the rest sit under one page fog. */
+  isLocked?: (card: ConnectorCardModel) => boolean
+  lockedLabel?: string
   loading?: boolean
   notices?: ReactNode
   onFilterChange: (next: ConnectorsFilter) => void
@@ -36,6 +41,8 @@ export function ConnectorsDirectory({
   cards,
   filter,
   hostedFailed = false,
+  isLocked,
+  lockedLabel,
   loading = false,
   notices,
   onFilterChange,
@@ -53,9 +60,41 @@ export function ConnectorsDirectory({
   const set = (patch: Partial<ConnectorsFilter>) => onFilterChange({ ...filter, ...patch })
 
   const { groups, hiddenMatches, segment, segments } = derivePage(cards, filter)
+  const pageCards = useMemo(() => groups.flatMap(group => group.cards), [groups])
+  const freeCards = useMemo(
+    () => (isLocked ? pageCards.filter(card => !isLocked(card)) : pageCards),
+    [isLocked, pageCards]
+  )
+  const lockedCards = useMemo(
+    () => (isLocked ? pageCards.filter(card => isLocked(card)) : []),
+    [isLocked, pageCards]
+  )
+  const lockedBehind = lockedCards.length > 0
+  const { freeAnchor, fogTop } = useLockFogTop(
+    lockedBehind,
+    `${freeCards.length}:${filter.query}:${filter.segment}`
+  )
+  const lockTip = lockedLabel || 'Upgrade to unlock more'
 
   const showSegments = segments.length > 2
   const segmentFellBack = segments.length > 0 && segment !== filter.segment
+
+  const renderCard = (card: ConnectorCardModel, interactive: boolean) => {
+    const key = cardKey(card)
+
+    return (
+      <ConnectorRowCard
+        busy={!interactive || busyKey === key}
+        card={card}
+        key={key}
+        onOpen={interactive ? () => onOpen(card) : () => undefined}
+        onPrefetch={interactive && onPrefetch ? () => onPrefetch(card) : undefined}
+        onServerToggle={interactive && onServerToggle ? next => onServerToggle(card, next) : undefined}
+        onVerb={interactive && onVerb ? () => onVerb(card) : undefined}
+        selected={interactive && selectedKey === key}
+      />
+    )
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3" data-slot="connectors-directory">
@@ -124,6 +163,22 @@ export function ConnectorsDirectory({
 
       {loading ? (
         <ToolsWash label={copy.page.loading} rows={10} />
+      ) : groups.length > 0 && lockedBehind ? (
+        <div className="relative min-h-0 flex-1 overflow-hidden">
+          <div className="grid h-full content-start gap-6 overflow-hidden pb-4">
+            <div ref={freeAnchor} className="grid gap-3 sm:grid-cols-2">
+              {freeCards.map(card => renderCard(card, true))}
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {lockedCards.map(card => renderCard(card, false))}
+            </div>
+          </div>
+          {fogTop > 0 ? (
+            <div className="absolute inset-x-0 bottom-0" style={{ top: fogTop }}>
+              <LockFog label={lockTip} />
+            </div>
+          ) : null}
+        </div>
       ) : groups.length > 0 ? (
         <div className="grid min-h-0 flex-1 content-start gap-6 overflow-y-auto overscroll-contain pb-4">
           {groups.map(group => (

@@ -3,6 +3,8 @@ import './catalog.css'
 import { type ReactNode, useState } from 'react'
 
 import { RowButton } from '@/components/ui/row-button'
+import { Tip } from '@/components/ui/tooltip'
+import { Lock } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 
 import { type CatalogEntry, catalogLabel } from './catalog-data'
@@ -64,13 +66,25 @@ interface CatalogCardProps {
   entry: CatalogEntry
   action: ReactNode
   accentIndex: number
+  locked?: boolean
+  lockedLabel?: string
   onOpen: (entry: CatalogEntry) => void
   onCategory: (category: string) => void
   onTag: (tag: string) => void
   onSearch: (value: string) => void
 }
 
-export function CatalogCard({ entry, action, accentIndex, onOpen, onCategory, onTag, onSearch }: CatalogCardProps) {
+export function CatalogCard({
+  entry,
+  action,
+  accentIndex,
+  locked = false,
+  lockedLabel = 'Locked',
+  onOpen,
+  onCategory,
+  onTag,
+  onSearch
+}: CatalogCardProps) {
   return (
     <article
       className={cn(
@@ -79,7 +93,9 @@ export function CatalogCard({ entry, action, accentIndex, onOpen, onCategory, on
       )}
       data-catalog-card
       data-entry-id={entry.id}
+      data-locked={locked ? '' : undefined}
     >
+      <div className={cn('flex min-h-0 flex-1 flex-col', locked && 'pointer-events-none select-none blur-[3px]')}>
       {entry.imageUrl && <CatalogImage className="aspect-[2/1]" key={entry.imageUrl} src={entry.imageUrl} />}
       <div className="flex min-h-0 w-full flex-1 flex-col gap-2 p-3">
         <div className="flex min-w-0 items-center gap-2.5">
@@ -93,7 +109,7 @@ export function CatalogCard({ entry, action, accentIndex, onOpen, onCategory, on
           >
             <span className="line-clamp-2 min-w-0 break-words text-lg">{entry.name}</span>
           </RowButton>
-          {action && (
+          {action && !locked && (
             <span className="relative shrink-0 opacity-[.66] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
               {action}
             </span>
@@ -122,6 +138,19 @@ export function CatalogCard({ entry, action, accentIndex, onOpen, onCategory, on
       <div className="mt-auto px-3 pb-3">
         <CatalogDates entry={entry} />
       </div>
+      </div>
+      {locked ? (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/35 backdrop-blur-[2px]">
+          <Tip label={lockedLabel}>
+            <span
+              aria-label={lockedLabel}
+              className="flex size-11 items-center justify-center rounded-full border border-white/20 bg-background/80 text-foreground shadow-lg"
+            >
+              <Lock className="size-4" />
+            </span>
+          </Tip>
+        </div>
+      ) : null}
     </article>
   )
 }
