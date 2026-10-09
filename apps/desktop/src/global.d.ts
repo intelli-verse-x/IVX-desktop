@@ -45,6 +45,8 @@ declare global {
         select: (appId: string) => Promise<DesktopBrandSession>
         connectors?: () => Promise<DesktopBrandConnectorList>
         saveConnector?: (connectorId: string, credential: string) => Promise<DesktopBrandConnectorList>
+        /** Opens brand wallet in the portal session window (no second browser login). */
+        openPayment?: (appId?: string) => Promise<DesktopBrandSession>
       }
       // Registry-scoped backend resolution: dial (connectionId, profile). An
       // empty/local connectionId delegates to the legacy getConnection path.
