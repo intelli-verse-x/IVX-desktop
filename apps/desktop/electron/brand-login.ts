@@ -20,6 +20,161 @@ const STALE_AUTH_COOKIES = ['accessToken', 'idToken', 'refreshToken', 'adminAcce
 
 let loginWindow: BrowserWindow | null = null
 let loginInFlight: Promise<BrandSession> | null = null
+let paymentWindow: BrowserWindow | null = null
+
+function brandPaymentUrl(appId: string): string {
+  const id = appId.trim()
+  const base = `${PORTAL_ORIGIN}/desktop/wallet`
+
+  return id ? `${base}?appId=${encodeURIComponent(id)}` : base
+}
+
+function isDesktopWalletPath(pathname: string): boolean {
+  return pathname === '/desktop/wallet' || pathname.startsWith('/desktop/wallet/')
+}
+
+function isPayPalHost(host: string): boolean {
+  return (
+    host === 'www.paypal.com' ||
+    host === 'paypal.com' ||
+    host.endsWith('.paypal.com') ||
+    host === 'www.sandbox.paypal.com' ||
+    host === 'sandbox.paypal.com'
+  )
+}
+
+/** Only the bare Unlock pay page on the portal host, plus PayPal checkout. */
+function isPaymentNavigationAllowed(raw: string): boolean {
+  let url: URL
+
+  try {
+    url = new URL(raw)
+  } catch {
+    return false
+  }
+
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+    return false
+  }
+
+  const host = url.hostname.toLowerCase()
+
+  if (isPayPalHost(host)) {
+    return true
+  }
+
+  if (host === 'admin.intelli-verse-x.ai' || host.endsWith('.intelli-verse-x.ai')) {
+    return isDesktopWalletPath(url.pathname)
+  }
+
+  return false
+}
+
+/** Open brand wallet in the same portal cookie jar so Unlock does not force a second login. */
+function openPayment(appId: string): Promise<BrandSession> {
+  if (paymentWindow && !paymentWindow.isDestroyed()) {
+    void paymentWindow.loadURL(brandPaymentUrl(appId))
+    paymentWindow.focus()
+
+    return currentBrand()
+  }
+
+  return new Promise<BrandSession>((resolve, reject) => {
+    const win = new BrowserWindow({
+      width: 1040,
+      height: 820,
+      title: 'Unlock payment',
+      autoHideMenuBar: true,
+      center: true,
+      webPreferences: {
+        partition: PARTITION,
+        contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: false
+      }
+    })
+
+    paymentWindow = win
+    let settled = false
+
+    const finish = (next: BrandSession) => {
+      if (settled) {
+        return
+      }
+
+      settled = true
+      resolve(next)
+    }
+
+    const holdPayment = (event: Electron.Event, url: string) => {
+      if (isPaymentNavigationAllowed(url)) {
+        return
+      }
+
+      event.preventDefault()
+    }
+
+    win.webContents.setWindowOpenHandler(({ url }) => {
+      if (!isPaymentNavigationAllowed(url)) {
+        return { action: 'deny' }
+      }
+
+      return {
+        action: 'allow',
+        overrideBrowserWindowOptions: {
+          webPreferences: {
+            partition: PARTITION,
+            contextIsolation: true,
+            nodeIntegration: false,
+            sandbox: false
+          }
+        }
+      }
+    })
+    win.webContents.on('will-navigate', holdPayment)
+    win.webContents.on('will-redirect', holdPayment)
+    win.webContents.on('did-fail-load', (_event, _code, description, _url, isMainFrame) => {
+      if (!isMainFrame || settled) {
+        return
+      }
+
+      reject(new Error(description || 'Could not open the payment page.'))
+
+      if (!win.isDestroyed()) {
+        win.close()
+      }
+    })
+    win.webContents.once('did-finish-load', () => {
+      void currentBrand().then(finish)
+    })
+
+    win.on('closed', () => {
+      paymentWindow = null
+      void currentBrand().then(next => {
+        if (!settled) {
+          finish(next)
+        }
+      })
+    })
+
+    void (async () => {
+      try {
+        if (!win.isDestroyed()) {
+          await win.loadURL(brandPaymentUrl(appId))
+          win.focus()
+        }
+      } catch (error) {
+        if (!settled) {
+          reject(error instanceof Error ? error : new Error('Could not open the payment page.'))
+        }
+
+        if (!win.isDestroyed()) {
+          win.close()
+        }
+      }
+    })()
+  })
+}
 
 function sessionFile(): string {
   return path.join(app.getPath('userData'), 'ivx-brand-session.json')
@@ -296,4 +451,14 @@ export function registerBrandLoginIpc(): void {
   ipcMain.handle('hermes:brand:saveConnector', async (_event, connectorId: unknown, credential: unknown) =>
     saveBrandConnector(await currentBrand(), connectorId, credential)
   )
+  ipcMain.handle('hermes:brand:openPayment', async (_event, appId: unknown) => {
+    const current = await currentBrand()
+    const requested = typeof appId === 'string' ? appId.trim() : ''
+    const target =
+      requested && (current.isSuper || current.appIds.includes(requested) || requested === current.activeAppId)
+        ? requested
+        : current.activeAppId
+
+    return openPayment(target)
+  })
 }

@@ -3,23 +3,14 @@ import { type RefObject, useLayoutEffect, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { openExternalLink } from '@/lib/external-link'
 import { Lock } from '@/lib/icons'
 import { $brandSession } from '@/store/brand-session'
-
-const BRAND_PAYMENT_ORIGIN = 'https://admin.intelli-verse-x.ai'
-
-function brandPaymentUrl(appId: string): string {
-  const id = appId.trim()
-  const base = `${BRAND_PAYMENT_ORIGIN}/admin/wallet`
-
-  return id ? `${base}?appId=${encodeURIComponent(id)}` : base
-}
 
 /** Soft top → heavy bottom wash that sits on the real list, not a separate pane. */
 export function LockFog({ label }: { label?: string }) {
   const brand = useStore($brandSession)
   const [payOpen, setPayOpen] = useState(false)
+  const [paying, setPaying] = useState(false)
   const unlockHint = label || 'Unlock all skills, tools, connectors, and plugins after payment.'
 
   return (
@@ -62,6 +53,7 @@ export function LockFog({ label }: { label?: string }) {
         </span>
         <Button
           className="pointer-events-auto shadow-lg"
+          disabled={paying}
           onClick={() => setPayOpen(true)}
           size="sm"
           type="button"
@@ -71,11 +63,30 @@ export function LockFog({ label }: { label?: string }) {
         </Button>
       </div>
       <ConfirmDialog
+        busyLabel="Opening payment…"
         confirmLabel="Continue to payment"
         description={unlockHint}
-        onClose={() => setPayOpen(false)}
-        onConfirm={() => {
-          openExternalLink(brandPaymentUrl(brand.activeAppId))
+        onClose={() => {
+          if (!paying) {
+            setPayOpen(false)
+          }
+        }}
+        onConfirm={async () => {
+          const openPayment = window.hermesDesktop?.brand?.openPayment
+
+          if (!openPayment) {
+            throw new Error('Payment is only available in the desktop app.')
+          }
+
+          setPaying(true)
+
+          try {
+            const next = await openPayment(brand.activeAppId)
+            $brandSession.set(next)
+          } finally {
+            setPaying(false)
+            setPayOpen(false)
+          }
         }}
         open={payOpen}
         title="Complete payment to unlock"

@@ -43,7 +43,8 @@ contextBridge.exposeInMainWorld('hermesDesktop', {
     signOut: () => ipcRenderer.invoke('hermes:brand:signOut'),
     select: appId => ipcRenderer.invoke('hermes:brand:select', appId),
     connectors: () => ipcRenderer.invoke('hermes:brand:connectors'),
-    saveConnector: (connectorId, credential) => ipcRenderer.invoke('hermes:brand:saveConnector', connectorId, credential)
+    saveConnector: (connectorId, credential) => ipcRenderer.invoke('hermes:brand:saveConnector', connectorId, credential),
+    openPayment: appId => ipcRenderer.invoke('hermes:brand:openPayment', appId)
   },
   // Registry-scoped backend resolution: { connectionId, profile } → descriptor.
   getConnectionFor: payload => ipcRenderer.invoke('hermes:connection:for', payload),
