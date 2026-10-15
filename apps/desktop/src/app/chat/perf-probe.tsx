@@ -225,6 +225,7 @@ if (typeof window !== 'undefined' && !window.__PERF_DRIVE__) {
           conflicted: kind === 'conflicted' ? 1 : 0,
           defaultBranch: 'main',
           detached: false,
+          upstream: null,
           files: [file],
           removed: 0,
           staged: 0,

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 
 import { PlatformAvatar } from '@/app/messaging/platform-icon'
+import { WorkbenchActivityBar, WorkbenchSideBar } from '@/app/workbench'
 import { Button } from '@/components/ui/button'
 import { Codicon } from '@/components/ui/codicon'
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from '@/components/ui/context-menu'
@@ -29,6 +30,7 @@ import { comboTokens } from '@/lib/keybinds/combo'
 import { sessionMatchesSearch } from '@/lib/session-search'
 import { normalizeSessionSource, sessionSourceLabel } from '@/lib/session-source'
 import { cn } from '@/lib/utils'
+import { $codeActivityPanelOpen } from '@/store/code-activity'
 import { $connectionsRegistry } from '@/store/connection-registry-state'
 import { $activeConnectionId } from '@/store/connections'
 import { $cronJobs } from '@/store/cron'
@@ -454,6 +456,7 @@ export function ChatSidebar({
   )
 
   const panesFlipped = useStore($panesFlipped)
+  const codeToolsOpen = useStore($codeActivityPanelOpen)
   const grouping = useStore($sidebarGrouping)
   const ordering = useStore($sidebarOrdering)
   const statusFilter = useStore($sidebarStatusFilter)
@@ -1597,6 +1600,12 @@ export function ChatSidebar({
       data-tip-region=""
       data-tour="sessions-sidebar"
     >
+      <div className="flex h-full min-h-0 min-w-0">
+        <WorkbenchActivityBar />
+        {codeToolsOpen ? (
+          <WorkbenchSideBar />
+        ) : (
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       <SidebarContent className="gap-0 overflow-hidden bg-transparent px-2.5">
         <SidebarGroup className="shrink-0 p-0 pb-2 pt-[calc(var(--titlebar-height)+0.375rem)]">
           <SidebarGroupContent>
@@ -2097,6 +2106,9 @@ export function ChatSidebar({
       <ProjectDialog />
       {/* One mount for the whole app. The header of WorktreeDialog tells why. */}
       <WorktreeDialog />
+          </div>
+        )}
+      </div>
     </Sidebar>
   )
 }

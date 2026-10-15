@@ -51,8 +51,26 @@ const DIFF_KIND_TEXT: Record<DiffKind, string> = {
   remove: 'text-(--ui-diff-remove-foreground)'
 }
 
+// Full-file preview rows: a stronger tint + a solid 3px edge bar, so a few
+// changed lines stay findable in a long file (VS Code's diff editor treatment).
+const PREVIEW_KIND_TINT: Record<DiffKind, string> = {
+  add: 'border-(--ui-diff-add-border) bg-(--ui-diff-add-row)',
+  context: 'border-transparent',
+  remove: 'border-(--ui-diff-remove-border) bg-(--ui-diff-remove-row)'
+}
+
+// Line-number gutter for the preview diff: tinted to match its row, plus a
+// +/− marker so the change kind reads without relying on color alone.
+const PREVIEW_GUTTER_TINT: Record<DiffKind, string> = {
+  add: 'bg-(--ui-diff-add-row) text-(--ui-diff-add-foreground)',
+  context: '',
+  remove: 'bg-(--ui-diff-remove-row) text-(--ui-diff-remove-foreground)'
+}
+
+const PREVIEW_GUTTER_MARK: Record<DiffKind, string> = { add: '+', context: '', remove: '−' }
+
 const DIFF_LINE_BASE = 'block min-w-max whitespace-pre border-l-2 px-2.5 py-px'
-const PREVIEW_DIFF_LINE_BASE = 'block h-5 min-w-max whitespace-pre px-2.5 leading-5'
+const PREVIEW_DIFF_LINE_BASE = 'block h-5 min-w-max whitespace-pre border-l-[3px] px-2.5 leading-5'
 const PREVIEW_CHUNK_LINES = 200
 const PREVIEW_LINE_PX = 20
 const PREVIEW_OVERSCAN_LINES = 400
@@ -342,7 +360,7 @@ function PreviewDiffRows({
             const rowTokens = tokens?.[index] ?? []
 
             return (
-              <span className={cn(PREVIEW_DIFF_LINE_BASE, DIFF_KIND_TINT[line.kind])} key={`${index}-${line.text}`}>
+              <span className={cn(PREVIEW_DIFF_LINE_BASE, PREVIEW_KIND_TINT[line.kind])} key={`${index}-${line.text}`}>
                 {rowTokens.length > 0
                   ? rowTokens.map((token, tokenIndex) => (
                       <span key={`${tokenIndex}-${token.offset}`} style={tokenStyle(token)}>
@@ -432,7 +450,7 @@ function TokenizedDiffBody({
         const rowTokens = tokens[index] ?? []
 
         return (
-          <span className={cn(PREVIEW_DIFF_LINE_BASE, DIFF_KIND_TINT[line.kind])} key={`${index}-${line.text}`}>
+          <span className={cn(PREVIEW_DIFF_LINE_BASE, PREVIEW_KIND_TINT[line.kind])} key={`${index}-${line.text}`}>
             {rowTokens.length > 0
               ? rowTokens.map((token, tokenIndex) => (
                   <span key={`${tokenIndex}-${token.offset}`} style={tokenStyle(token)}>
@@ -541,7 +559,7 @@ function DiffOverviewRuler({ lines }: { lines: DiffLine[] }) {
   }
 
   return (
-    <div aria-hidden className="pointer-events-none absolute top-0 right-0 bottom-0 w-1.5 opacity-80">
+    <div aria-hidden className="pointer-events-none absolute top-0 right-0 bottom-0 w-2">
       {/* Cap the tick field to the diff's natural height (rows × line px) so a
           short diff renders thin, line-aligned ticks instead of stretching a few
           changes into gross full-height blocks. A long diff hits the 100% cap and
@@ -603,6 +621,23 @@ export function FileDiffPanel({
   })
 
   const visibleLineChunks = lineChunks.slice(startChunk, endChunk + 1)
+
+  // VS Code's diff editor opens on the first change, not at line 1 of the file.
+  // Once per file, so a live reload of the same file keeps the reader's place.
+  const firstChange = React.useMemo(() => lines.findIndex(line => line.kind !== 'context'), [lines])
+  const revealedPath = React.useRef<null | string>(null)
+
+  React.useEffect(() => {
+    const scroller = scrollerRef.current
+    const key = path ?? ''
+
+    if (!showLineNumbers || fullText == null || !scroller || firstChange < 0 || revealedPath.current === key) {
+      return
+    }
+
+    revealedPath.current = key
+    scroller.scrollTop = Math.max(0, firstChange - 3) * PREVIEW_LINE_PX
+  }, [firstChange, fullText, path, scrollerRef, showLineNumbers])
 
   const language = shikiLanguageForFilename(path)
   const canHighlight = Boolean(language) && !exceedsHighlightBudget(fullText ?? diff)
@@ -669,10 +704,11 @@ export function FileDiffPanel({
 
                     return (
                       <div
-                        className="h-5 w-9 pr-2 text-right leading-5 tabular-nums"
+                        className={cn('flex h-5 leading-5 tabular-nums', PREVIEW_GUTTER_TINT[line.kind])}
                         key={`${index}-${line.oldNo}-${line.newNo}`}
                       >
-                        {line.newNo ?? ''}
+                        <span className="w-9 pr-1 text-right">{line.newNo ?? line.oldNo ?? ''}</span>
+                        <span className="w-4 text-center font-bold">{PREVIEW_GUTTER_MARK[line.kind]}</span>
                       </div>
                     )
                   })}
@@ -680,7 +716,8 @@ export function FileDiffPanel({
               ))}
               {afterRows > 0 && <div aria-hidden style={{ height: afterRows * PREVIEW_LINE_PX }} />}
             </div>
-            <div className="min-w-0">{windowedBody}</div>
+            {/* Same vertical padding as the gutter, so each number stays on its row. */}
+            <div className="min-w-0 py-3">{windowedBody}</div>
           </div>
         ) : (
           <div className="min-w-0">{windowedBody}</div>

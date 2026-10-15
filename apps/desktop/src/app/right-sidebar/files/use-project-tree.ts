@@ -23,6 +23,8 @@ export interface TreeNode {
   placeholder?: 'error' | 'loading'
   /** Last error code from readDir (e.g. EACCES). Cleared on next successful load. */
   error?: string
+  /** Set on top-level folders of a multi-folder workspace; `added` ones can be unlinked. */
+  workspaceRoot?: 'added' | 'linked' | 'main'
 }
 
 const PLACEHOLDER_ID = '__loading__'

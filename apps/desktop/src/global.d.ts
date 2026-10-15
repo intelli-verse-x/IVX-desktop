@@ -507,6 +507,14 @@ declare global {
         // Compact working-tree status for the composer coding rail. Null on a
         // non-repo / remote backend (where the Electron probe can't run).
         repoStatus: (repoPath: string) => Promise<HermesRepoStatus | null>
+        // Source Control Graph: topo-ordered commits across HEAD, its upstream,
+        // and the remote default branch. Empty off-repo / before the first commit.
+        history: (repoPath: string, limit?: number) => Promise<HermesGitHistory>
+        // Remote sync for the Branch view. `pull` is fast-forward only; `sync`
+        // publishes a branch with no upstream, else pulls then pushes.
+        fetch: (repoPath: string) => Promise<{ ok: boolean }>
+        pull: (repoPath: string) => Promise<{ ok: boolean }>
+        sync: (repoPath: string) => Promise<{ ok: boolean }>
         // Working-tree-vs-HEAD unified diff for one file (the preview's diff
         // view). Empty string when the file is unchanged or not in a repo.
         fileDiff: (repoPath: string, filePath: string) => Promise<string>
@@ -1635,6 +1643,8 @@ export interface HermesRepoStatus {
   // the default" from anywhere. Null when no trunk is detected.
   defaultBranch: null | string
   detached: boolean
+  // Upstream tracking ref ("origin/feature"), null when the branch is unpublished.
+  upstream: null | string
   ahead: number
   behind: number
   staged: number
@@ -1649,6 +1659,29 @@ export interface HermesRepoStatus {
   removed: number
   // Capped changed-file list (REPO_STATUS_FILE_CAP) for the diff/open actions.
   files: HermesRepoStatusFile[]
+}
+
+// One commit in the Source Control Graph. `refs` are decoration names
+// ("main", "origin/main", "tag: v1.0"); `timestamp` is author time in seconds.
+export interface HermesGitCommit {
+  sha: string
+  parents: string[]
+  author: string
+  email: string
+  timestamp: number
+  subject: string
+  refs: string[]
+}
+
+export interface HermesGitHistory {
+  commits: HermesGitCommit[]
+  // HEAD sha, null off-repo or before the first commit.
+  head: null | string
+  // Upstream of the current branch ("origin/feature") and the remote default
+  // branch ("origin/main") the graph also walks; null when absent.
+  upstream: null | string
+  base: null | string
+  hasMore: boolean
 }
 
 // Diff scope for the review pane, mirroring Codex: uncommitted working-tree
@@ -1671,6 +1704,8 @@ export interface HermesReviewList {
   // The resolved base ref the scope diffed against (branch merge-base / turn
   // baseline), or null for the uncommitted scope.
   base: null | string
+  // Work-tree root the `files` paths are relative to; absent from older backends.
+  root?: null | string
 }
 
 // The branch's PR (if any) as reported by `gh pr view`.
