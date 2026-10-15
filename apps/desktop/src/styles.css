@@ -272,6 +272,10 @@
     --ui-diff-remove-border: var(--ui-red);
     --ui-diff-remove-background: color-mix(in srgb, var(--ui-red) 12%, transparent);
     --ui-diff-remove-foreground: color-mix(in srgb, var(--ui-red) 70%, #000);
+    /* Full-file preview diff: changed rows sit among many unchanged ones, so
+       they need a stronger tint than a compact hunk to be spotted at a glance. */
+    --ui-diff-add-row: color-mix(in srgb, var(--ui-green) 20%, transparent);
+    --ui-diff-remove-row: color-mix(in srgb, var(--ui-red) 20%, transparent);
 
     /* Overlay ladder. DESIGN.md: app-wide surfaces must not compete through
        ad-hoc z-index literals — pick the rung that describes the surface.
@@ -605,6 +609,8 @@
     --ui-cyan: #6f9ba6;
     --ui-diff-add-foreground: color-mix(in srgb, var(--ui-green) 62%, #fff);
     --ui-diff-remove-foreground: color-mix(in srgb, var(--ui-red) 62%, #fff);
+    --ui-diff-add-row: color-mix(in srgb, var(--ui-green) 28%, transparent);
+    --ui-diff-remove-row: color-mix(in srgb, var(--ui-red) 28%, transparent);
 
     --sidebar-edge-border: color-mix(in srgb, #ffffff6b 24%, transparent);
     --composer-ring-strength: 1.3;

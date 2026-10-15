@@ -33,6 +33,7 @@ const ICON = '0.85rem'
 // The commit / push / PR action bar at the bottom of the review pane. Supports
 // both paths: the user drives it directly, OR hands the whole thing to the agent
 // with one click (requestComposerSubmit sends it a task through the composer).
+// Branch-scope PR UI lives in `ReviewBranchPanel` — not here.
 export function ReviewShipBar() {
   const { t } = useI18n()
   const c = t.statusStack.coding
@@ -50,20 +51,9 @@ export function ReviewShipBar() {
   const canCommit = hasFiles && message.trim().length > 0 && !busy
   const canGenerate = hasFiles && !generating && !busy
 
-  // Commit / push / PR operate on the working tree, so they only make sense for
-  // the uncommitted scope — the branch / last-turn scopes are read-only views.
+  // Commit / stage only make sense on Changes. Branch uses ReviewBranchPanel.
   if (scope !== 'uncommitted') {
-    // Don't just vanish: say why. A user who reopened the pane on a persisted
-    // non-uncommitted scope would otherwise find no ship bar and no hint that
-    // it's a deliberate read-only view, not a broken pane.
-    return (
-      <div
-        className="shrink-0 px-2 pb-1.5 text-center text-[0.64rem] text-(--ui-text-tertiary)"
-        data-suppress-pane-reveal-side=""
-      >
-        {c.readOnlyScope}
-      </div>
-    )
+    return null
   }
 
   if (!hasFiles) {

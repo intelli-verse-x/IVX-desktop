@@ -34,12 +34,14 @@ import { openPreview } from '@/store/preview'
 import {
   $reviewFiles,
   $reviewLoading,
-  $reviewOpen,
+  $reviewRepoRoot,
   $reviewScopeCwd,
   $reviewSelectedPath,
+  $reviewSurfaceActive,
   $reviewTreeMode,
+  focusReviewFile,
   requestRevert,
-  reviewRepoCwd,
+  reviewFileAbsolutePath,
   selectReviewFile,
   stageReviewFile,
   unstageReviewFile
@@ -71,18 +73,6 @@ const STATUS_GLYPH: Record<string, { icon: string; tone: string }> = {
   '?': { icon: 'diff-added', tone: 'text-muted-foreground/60' }
 }
 
-// Review paths are repo-relative; the composer drop expects absolute paths, so
-// join against the pane's repo (its pinned scope, else the active session cwd).
-function absolutePath(relative: string): string {
-  if (/^([a-zA-Z]:[\\/]|\/)/.test(relative)) {
-    return relative
-  }
-
-  const cwd = reviewRepoCwd()?.replace(/[\\/]+$/, '')
-
-  return cwd ? `${cwd}/${relative}` : relative
-}
-
 // Fast, layout-aware row: `layout` slides siblings when one is inserted/removed
 // (a new file at index N pushes the rest down), AnimatePresence fades the
 // enter/exit. A tight, near-critically-damped spring keeps it crisp (quick
@@ -109,7 +99,7 @@ const OVERSCAN_ROWS = 12
 
 export function ReviewFileTree() {
   const files = useStore($reviewFiles)
-  const open = useStore($reviewOpen)
+  const open = useStore($reviewSurfaceActive)
   const loading = useStore($reviewLoading)
   const mode = useStore($reviewTreeMode)
 
@@ -299,10 +289,11 @@ function ReviewDirRow({
           name={open ? 'folder-opened' : 'folder'}
           size="0.8rem"
         />
-        <span className="min-w-0 flex-1 truncate" title={node.name}>
+        <span className="min-w-0 shrink truncate" title={node.name}>
           {node.name}
         </span>
         {!open && <DiffCount added={node.added} className="text-[0.64rem] leading-4" removed={node.removed} />}
+        <span className="min-w-0 flex-1" />
       </div>
       {!leaf && open && node.children && <ReviewNodeList animate={animate} depth={depth + 1} nodes={node.children} />}
     </>
@@ -316,44 +307,13 @@ function ReviewFileRow({ node, depth }: { node: ReviewTreeNode; depth: number })
   const file = node.file!
   const selected = file.path === selectedPath
   const glyph = STATUS_GLYPH[file.status] ?? STATUS_GLYPH.M
-  const dragPath = absolutePath(file.path)
-  // Reactive mirror of reviewRepoCwd(): the pinned scope wins, else the
-  // active session's cwd (subscribing to both keeps the row live either way).
+  // Reactive mirror of reviewFileAbsolutePath(): the listed repo's work-tree
+  // root, else the pinned scope, else the active session's cwd.
+  const repoRoot = useStore($reviewRepoRoot)
   const scopeCwd = useStore($reviewScopeCwd)
   const activeCwd = useStore($currentCwd)
-  const cwd = scopeCwd?.trim() || activeCwd
-
-  // Single-click shows the inline diff; double-click opens the file in the main
-  // preview pane (matching the file browser). They're mutually exclusive: defer
-  // the single-click select briefly so a double-click can cancel it, otherwise a
-  // double-click would fire BOTH (inline diff + main preview = two previews).
-  const clickTimer = useRef<null | ReturnType<typeof setTimeout>>(null)
-
-  useEffect(
-    () => () => {
-      if (clickTimer.current != null) {
-        clearTimeout(clickTimer.current)
-      }
-    },
-    []
-  )
-
-  const handleClick = () => {
-    // A file-browser rename of the same path is active → ignore the fall-through
-    // click so it doesn't open the diff / steal focus from that editor.
-    if ($renamingPath.get() === dragPath) {
-      return
-    }
-
-    if (clickTimer.current != null) {
-      clearTimeout(clickTimer.current)
-    }
-
-    clickTimer.current = setTimeout(() => {
-      clickTimer.current = null
-      void selectReviewFile(file)
-    }, 200)
-  }
+  const cwd = repoRoot || scopeCwd?.trim() || activeCwd
+  const dragPath = reviewFileAbsolutePath(file.path)
 
   const openInPreview = () => {
     void (async () => {
@@ -369,13 +329,26 @@ function ReviewFileRow({ node, depth }: { node: ReviewTreeNode; depth: number })
     })()
   }
 
-  const handleDoubleClick = () => {
-    if (clickTimer.current != null) {
-      clearTimeout(clickTimer.current)
-      clickTimer.current = null
+  // VS Code: clicking a change opens it in the editor area. The preview there
+  // defaults to its DIFF view for changed files. A deleted file has nothing on
+  // disk to open, so its diff stays inline in this pane.
+  const openChanges = () => {
+    if (file.status === 'D') {
+      void selectReviewFile(file)
+
+      return
     }
 
+    focusReviewFile(file.path)
     openInPreview()
+  }
+
+  const handleClick = () => {
+    // A file-browser rename of the same path is active → ignore the fall-through
+    // click so it doesn't open the diff / steal focus from that editor.
+    if ($renamingPath.get() !== dragPath) {
+      openChanges()
+    }
   }
 
   return (
@@ -383,7 +356,7 @@ function ReviewFileRow({ node, depth }: { node: ReviewTreeNode; depth: number })
       cwd={cwd}
       dragPath={dragPath}
       file={file}
-      onOpenChanges={() => void selectReviewFile(file)}
+      onOpenChanges={openChanges}
       onOpenFile={openInPreview}
     >
       <div
@@ -394,7 +367,6 @@ function ReviewFileRow({ node, depth }: { node: ReviewTreeNode; depth: number })
         )}
         draggable
         onClick={handleClick}
-        onDoubleClick={handleDoubleClick}
         onDragStart={event => {
           event.dataTransfer.effectAllowed = 'copy'
           event.dataTransfer.setData(
@@ -407,19 +379,22 @@ function ReviewFileRow({ node, depth }: { node: ReviewTreeNode; depth: number })
         title={displayPath(dragPath)}
       >
         <Codicon className={cn('shrink-0', glyph.tone)} name={glyph.icon} size="0.8rem" />
-        {/* Dir collapses first (huge shrink); the name only ellipsizes once the
-            dir is gone — either way neither runs into the diff count. */}
-        <span className="flex min-w-0 flex-1 items-baseline gap-1.5">
-          <span className="min-w-0 shrink truncate" title={node.name}>
-            {node.name}
-          </span>
-          {node.dir && (
-            <span className="min-w-0 shrink-[9999] truncate text-[0.68rem] text-(--ui-text-tertiary)" title={node.dir}>
-              {node.dir}
-            </span>
-          )}
+        {/* Keep name + +/- packed (no cavernous middle gap); hover actions sit
+            after a flex spacer so they still land on the trailing edge. */}
+        <span className="min-w-0 shrink truncate" title={node.name}>
+          {node.name}
         </span>
-
+        {node.dir && (
+          <span className="min-w-0 shrink-[9999] truncate text-[0.68rem] text-(--ui-text-tertiary)" title={node.dir}>
+            {node.dir}
+          </span>
+        )}
+        <DiffCount
+          added={node.added}
+          className="text-[0.64rem] leading-4 group-hover/review-row:hidden"
+          removed={node.removed}
+        />
+        <span className="min-w-0 flex-1" />
         <span className="hidden shrink-0 items-center gap-0.5 group-hover/review-row:flex">
           <Tip label={file.staged ? c.unstage : c.stage}>
             <Button
@@ -450,12 +425,6 @@ function ReviewFileRow({ node, depth }: { node: ReviewTreeNode; depth: number })
             </Button>
           </Tip>
         </span>
-
-        <DiffCount
-          added={node.added}
-          className="text-[0.64rem] leading-4 group-hover/review-row:hidden"
-          removed={node.removed}
-        />
         {file.staged && (
           <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-(--ui-green)/70" title={c.staged} />
         )}

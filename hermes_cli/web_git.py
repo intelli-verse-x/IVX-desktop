@@ -207,6 +207,7 @@ def repo_status(cwd: str) -> dict | None:
         return None
 
     branch: str | None = None
+    upstream: str | None = None
     detached = False
     ahead = behind = 0
     for rec in raw.split("\0"):
@@ -214,6 +215,8 @@ def repo_status(cwd: str) -> dict | None:
             head = rec[len("# branch.head ") :]
             detached = head == "(detached)"
             branch = None if detached else head
+        elif rec.startswith("# branch.upstream "):
+            upstream = rec[len("# branch.upstream ") :] or None
         elif rec.startswith("# branch.ab "):
             for tok in rec.split()[2:]:
                 if tok.startswith("+"):
@@ -229,7 +232,7 @@ def repo_status(cwd: str) -> dict | None:
     added += sum(_untracked_insertions(cwd, f["path"]) for f in files[:_UNTRACKED_SCAN_CAP] if f["untracked"])
     return {
         "branch": branch, "defaultBranch": _default_branch_name(cwd), "detached": detached,
-        "ahead": ahead, "behind": behind,
+        "upstream": None if detached else upstream, "ahead": ahead, "behind": behind,
         **{flag: sum(f[flag] for f in files) for flag in ("staged", "unstaged", "untracked", "conflicted")},
         "changed": len(files), "added": added, "removed": sum(r for _, r in counts), "files": files[:200],
     }
@@ -238,23 +241,30 @@ def repo_status(cwd: str) -> dict | None:
 # ── review pane ──────────────────────────────────────────────────────────────
 
 
+def _top(cwd: str) -> str:
+    """Status paths are relative to the work-tree root, so per-path review ops run
+    there even when the chat's folder is a subdirectory of the repo."""
+    return _git_line(cwd, ["rev-parse", "--show-toplevel"]) or cwd
+
+
 def _review_result(cwd: str, files: list[dict], base: str | None) -> dict:
     """Sorted rows; untracked rows with no counts get their insertion count filled in."""
     files.sort(key=lambda f: f["path"])
     for file in files:
         if file["status"] == "?" and file["added"] == 0 and file["removed"] == 0:
             file["added"] = _untracked_insertions(cwd, file["path"])
-    return {"files": files, "base": base}
+    return {"files": files, "base": base, "root": cwd}
 
 
 def review_list(cwd: str, scope: str, base_ref: str | None) -> dict:
     """Changed files for a scope. Mirrors the Electron reviewList shapes."""
     if not _is_dir(cwd):
-        return {"files": [], "base": None}
+        return {"files": [], "base": None, "root": None}
+    cwd = _top(cwd)
     if scope in ("branch", "lastTurn"):
         base = _branch_base(cwd) if scope == "branch" else base_ref
         if not base:
-            return {"files": [], "base": None}
+            return {"files": [], "base": None, "root": cwd}
         rng = f"{base}...HEAD" if scope == "branch" else base
         files = [
             {"path": path, "added": a, "removed": r, "status": "M", "staged": False}
@@ -271,7 +281,7 @@ def review_list(cwd: str, scope: str, base_ref: str | None) -> dict:
 
     code, raw = _status_z(cwd)
     if code != 0:
-        return {"files": [], "base": None}
+        return {"files": [], "base": None, "root": None}
     staged = _numstat(cwd, ["--cached"])
     unstaged = _numstat(cwd, [])
     files = []
@@ -291,6 +301,7 @@ def _all_add_diff(cwd: str, file_path: str) -> str:
 def review_diff(cwd: str, file_path: str, scope: str, base_ref: str | None, staged: bool) -> str:
     if not _is_dir(cwd):
         return ""
+    cwd = _top(cwd)
     if scope == "branch":
         base = _branch_base(cwd)
         return _git_out(cwd, ["diff", f"{base}...HEAD", "--", file_path]) if base else ""
@@ -315,17 +326,18 @@ def file_diff_vs_head(cwd: str, file_path: str) -> str:
 
 
 def review_stage(cwd: str, file_path: str | None) -> dict:
-    _git_ok(cwd, ["add", "--", file_path] if file_path else ["add", "-A"])
+    _git_ok(_top(cwd), ["add", "--", file_path] if file_path else ["add", "-A"])
     return {"ok": True}
 
 
 def review_unstage(cwd: str, file_path: str | None) -> dict:
-    _git_ok(cwd, ["reset", "-q", "HEAD", *(["--", file_path] if file_path else [])])
+    _git_ok(_top(cwd), ["reset", "-q", "HEAD", *(["--", file_path] if file_path else [])])
     return {"ok": True}
 
 
 def review_revert(cwd: str, file_path: str | None) -> dict:
     """Discard changes back to the committed state (restore tracked, remove untracked)."""
+    cwd = _top(cwd)
     target = ["--", file_path or "."]
     _git(cwd, ["checkout", "HEAD", *target])
     _git(cwd, ["clean", "-fd", *target])

@@ -8,15 +8,20 @@ import { matchesQuery } from '@/hooks/use-media-query'
 import { desktopGit } from '@/lib/desktop-git'
 import { isExcludedPath } from '@/lib/excluded-paths'
 import { requestOneShot } from '@/lib/oneshot'
+import { cleanPath, comparisonPath } from '@/lib/path-compare'
 import { Codecs, persistentAtom } from '@/lib/persisted'
 import { modeBound } from '@/store/interface-mode'
 
+import { $codeActivityPanelOpen, $codeActivityView, $scmRepo } from './code-activity'
 import { refreshRepoStatus, repoStatusForCwd } from './coding-status'
 import { noteAreaClosed, recordFeatureUse } from './desktop-metrics'
 import { stampSessionPrBranch } from './pull-requests'
 import { $busy, $currentCwd, $selectedStoredSessionId, $sessions } from './session'
-import { $sessionStates } from './session-states'
+import { $focusedWorkspaceCwd, $sessionStates } from './session-states'
 import { $workspaceChangeTick } from './workspace-events'
+import { $workspaceFolders } from './workspace-folders'
+
+const samePath = (a: string, b: string): boolean => comparisonPath(cleanPath(a)) === comparisonPath(cleanPath(b))
 
 // State for the review pane: the working-tree changed-file list, the selected
 // file's diff, and the git mutations (stage / unstage / revert). The active
@@ -35,7 +40,6 @@ export const REVIEW_PANE_ID = 'review'
 const OPEN_KEY = 'hermes.desktop.reviewOpen'
 const COMMIT_DEFAULT_KEY = 'hermes.desktop.reviewCommitDefault'
 const TREE_MODE_KEY = 'hermes.desktop.reviewTreeMode'
-const SCOPE_KEY = 'hermes.desktop.reviewScope'
 const SELECTED_KEY = 'hermes.desktop.reviewSelectedPath'
 const REVIEW_REFRESH_DEBOUNCE_MS = 100
 const SHIP_INFO_STALE_MS = 30_000
@@ -46,6 +50,19 @@ const SHIP_INFO_STALE_MS = 30_000
 const $reviewOpenPref = persistentAtom(OPEN_KEY, false, Codecs.bool)
 
 export const $reviewOpen = modeBound('reviewOpen', $reviewOpenPref, open => $reviewOpenPref.set(open))
+
+/** True when any Source Control surface is showing: the classic ⌘G right-rail
+ *  pane, or the workbench activity-bar SCM composite. Data refresh gates on
+ *  this — not `$reviewOpen` alone — so opening SCM in the Sessions column
+ *  still probes git even though the right-rail preference stays closed. */
+export const $reviewSurfaceActive = computed(
+  [$reviewOpen, $codeActivityPanelOpen, $codeActivityView],
+  (open, panelOpen, view) => open || (panelOpen && view === 'scm')
+)
+
+function isReviewSurfaceActive(): boolean {
+  return $reviewSurfaceActive.get()
+}
 
 // The split-button's remembered default action ('commit' | 'commitPush').
 export type CommitAction = 'commit' | 'commitPush'
@@ -67,14 +84,28 @@ export function toggleReviewTreeMode(): void {
   $reviewTreeMode.set($reviewTreeMode.get() === 'tree' ? 'list' : 'tree')
 }
 
-// Diff scope for the review pane. 'uncommitted' (staged+unstaged+untracked) is
-// the review-before-commit default; 'branch' shows committed work vs the trunk
-// merge-base; 'lastTurn' shows everything (committed + uncommitted) since the
-// most recent turn began. Persisted like the tree-mode toggle.
-export const $reviewScope = persistentAtom<HermesReviewScope>(SCOPE_KEY, 'uncommitted', {
-  decode: raw => (raw === 'branch' || raw === 'lastTurn' ? raw : 'uncommitted'),
-  encode: value => value
-})
+// Diff scope for the review pane's file list. 'uncommitted' (staged+unstaged+
+// untracked) is what the Source Control Changes view shows; 'branch' (committed
+// work vs the trunk merge-base) and 'lastTurn' (everything since the turn began)
+// remain for programmatic callers. Not persisted: the Changes / Branch / Graph
+// tabs (`$scmView`) are the user's choice, and a stale saved scope would turn
+// Changes into a branch diff with no tab to undo it.
+export const $reviewScope = atom<HermesReviewScope>('uncommitted')
+
+// Work-tree root of the listed repo. Review paths are relative to it, which is
+// not the chat's folder when that folder is a subdirectory of the repo.
+export const $reviewRepoRoot = atom<null | string>(null)
+
+/** Absolute path of a review row (paths from git are work-tree-relative). */
+export function reviewFileAbsolutePath(relative: string): string {
+  if (/^([a-zA-Z]:[\\/]|\/)/.test(relative)) {
+    return relative
+  }
+
+  const root = ($reviewRepoRoot.get() || reviewRepoCwd())?.replace(/[\\/]+$/, '')
+
+  return root ? `${root}/${relative}` : relative
+}
 
 // HEAD sha per repo cwd, captured when the most recent turn started in that
 // repo — the baseRef for the 'lastTurn' scope. Keyed by cwd so a pinned tile
@@ -155,9 +186,63 @@ export const $reviewScopeCwd = atom<null | string>(null)
 // whose worktree the user is reviewing, not broadcast to every mounted tile.
 export const $reviewScopeTarget = atom('main')
 
-/** The repo the pane is reading right now: its pinned scope, else the active
+/** Folders Source Control can track for a chat: its workspace plus the extra
+ *  folders added beside it (VS Code's multi-root Repositories list). */
+export function scmRepoCandidates(
+  workspaceCwd: null | string | undefined,
+  extraFolders: Record<string, string[]> = $workspaceFolders.get()
+): string[] {
+  const root = workspaceCwd?.trim()
+
+  if (!root) {
+    return []
+  }
+
+  const folders = [root, ...(extraFolders[cleanPath(root)] ?? [])]
+
+  return folders.filter((path, index) => folders.findIndex(other => samePath(other, path)) === index)
+}
+
+/** The repo the pane is reading right now: its pinned scope, else the focused
+ *  workbench workspace (when SCM is in the activity bar), else the active
  *  session's cwd. Exported for pane helpers that join repo-relative paths. */
-export const reviewRepoCwd = (): null | string => $reviewScopeCwd.get()?.trim() || $currentCwd.get()?.trim() || null
+export const reviewRepoCwd = (): null | string => {
+  const scoped = $reviewScopeCwd.get()?.trim()
+
+  if (scoped) {
+    return scoped
+  }
+
+  // Workbench SCM sits beside Sessions and should track the focused chat's
+  // folders — not only `$currentCwd`, which can lag / stay empty while tiles
+  // already show workspace paths. A repository picked in the Repositories list
+  // wins while it still belongs to the focused chat.
+  if ($codeActivityPanelOpen.get() && $codeActivityView.get() === 'scm') {
+    const focused = $focusedWorkspaceCwd.get()?.trim()
+
+    if (focused) {
+      const picked = $scmRepo.get()
+
+      return picked && scmRepoCandidates(focused).some(path => samePath(path, picked)) ? picked : focused
+    }
+  }
+
+  return $currentCwd.get()?.trim() || null
+}
+
+/** Reactive `reviewRepoCwd`: recomputes on every input it reads. */
+export const $reviewRepoCwd = computed(
+  [
+    $reviewScopeCwd,
+    $codeActivityPanelOpen,
+    $codeActivityView,
+    $focusedWorkspaceCwd,
+    $scmRepo,
+    $workspaceFolders,
+    $currentCwd
+  ],
+  () => reviewRepoCwd()
+)
 
 const repoCwd = reviewRepoCwd
 
@@ -165,6 +250,9 @@ type ReviewBridge = NonNullable<NonNullable<NonNullable<Window['hermesDesktop']>
 let reviewRefreshSeq = 0
 let reviewRefreshTimer: ReturnType<typeof setTimeout> | null = null
 let reviewSelectionSeq = 0
+// Whether the selected row shows its diff inline in the pane (deleted files)
+// rather than in the main preview, so refreshes only re-fetch an inline diff.
+let reviewSelectionInline = true
 let shipInfoSeq = 0
 let shipInfoLastCheckedAt = 0
 
@@ -209,9 +297,10 @@ export async function refreshReview(): Promise<boolean> {
   const selectionSeq = reviewSelectionSeq
   const ownsList = () => seq === reviewRefreshSeq && repoCwd() === intentCwd
 
-  if (!$reviewOpen.get() || !ctx) {
+  if (!isReviewSurfaceActive() || !ctx) {
     if (ownsList()) {
       $reviewFiles.set([])
+      $reviewRepoRoot.set(null)
       $reviewIsRepo.set(Boolean(ctx))
 
       // Critical: clear loading on the no-cwd / not-a-repo path too. It's set
@@ -241,6 +330,7 @@ export async function refreshReview(): Promise<boolean> {
     // .gitignored paths are already dropped upstream by `git status`.
     const files = result.files.filter(file => !isExcludedPath(file.path))
 
+    $reviewRepoRoot.set(result.root || cwd)
     $reviewFiles.set(files)
 
     // Drop the selection if the file is gone (staged away, reverted) so the diff
@@ -252,7 +342,7 @@ export async function refreshReview(): Promise<boolean> {
 
       if (selected && !selectedFile) {
         clearReviewSelection()
-      } else if (selectedFile && $reviewDiff.get() === null) {
+      } else if (selectedFile && reviewSelectionInline && $reviewDiff.get() === null) {
         void selectReviewFile(selectedFile)
       }
     }
@@ -272,7 +362,7 @@ export async function refreshReview(): Promise<boolean> {
 }
 
 function scheduleReviewRefresh(): void {
-  if (!$reviewOpen.get()) {
+  if (!isReviewSurfaceActive()) {
     return
   }
 
@@ -293,6 +383,7 @@ function scheduleReviewRefresh(): void {
 
 export async function selectReviewFile(file: HermesReviewFile): Promise<void> {
   const seq = (reviewSelectionSeq += 1)
+  reviewSelectionInline = true
   $reviewSelectedPath.set(file.path)
 
   const intentCwd = repoCwd()
@@ -327,6 +418,15 @@ export async function selectReviewFile(file: HermesReviewFile): Promise<void> {
       $reviewDiffLoading.set(false)
     }
   }
+}
+
+/** Highlights a row whose changes open in the main preview, not the inline diff. */
+export function focusReviewFile(path: string): void {
+  reviewSelectionSeq += 1
+  reviewSelectionInline = false
+  $reviewSelectedPath.set(path)
+  $reviewDiff.set(null)
+  $reviewDiffLoading.set(false)
 }
 
 export function clearReviewSelection(): void {
@@ -503,7 +603,7 @@ async function afterMutation(): Promise<void> {
   const file = selected ? $reviewFiles.get().find(f => f.path === selected) : null
 
   // Re-fetch the open diff (staging flips which diff — cached vs worktree).
-  if (file) {
+  if (file && reviewSelectionInline) {
     void selectReviewFile(file)
   }
 }
@@ -695,7 +795,7 @@ export async function createOrOpenPr(): Promise<void> {
 // pane's changed-file list. gh/PR re-check is NOT here (gh is slow); it runs on
 // the settle edge below.
 $workspaceChangeTick.subscribe(() => {
-  if ($reviewOpen.get()) {
+  if (isReviewSurfaceActive()) {
     scheduleReviewRefresh()
   }
 })
@@ -705,7 +805,7 @@ $workspaceChangeTick.subscribe(() => {
 let prevBusy = $busy.get()
 
 $busy.subscribe(busy => {
-  if (prevBusy && !busy && $reviewOpen.get()) {
+  if (prevBusy && !busy && isReviewSurfaceActive()) {
     scheduleReviewRefresh()
     refreshShipInfoIfStale()
   }
@@ -756,7 +856,7 @@ $sessionStates.subscribe(states => {
 // straight to its loading skeleton instead of blipping the previous repo's
 // diff into the new one.
 function onReviewRepoMoved(): void {
-  if ($reviewOpen.get()) {
+  if (isReviewSurfaceActive()) {
     clearReviewSelection()
     $reviewFiles.set([])
     $reviewLoading.set(true)
@@ -771,6 +871,22 @@ $currentCwd.subscribe(() => {
   }
 })
 
+// Workbench SCM follows the focused chat folder (or the repository picked from
+// its folders); re-probe when that resolves to another repo.
+let prevWorkbenchRepo = $reviewRepoCwd.get()
+
+$reviewRepoCwd.subscribe(next => {
+  if (next === prevWorkbenchRepo) {
+    return
+  }
+
+  prevWorkbenchRepo = next
+
+  if (!$reviewScopeCwd.get() && $codeActivityPanelOpen.get() && $codeActivityView.get() === 'scm') {
+    onReviewRepoMoved()
+  }
+})
+
 let prevScopeCwd = $reviewScopeCwd.get()
 
 $reviewScopeCwd.subscribe(scope => {
@@ -780,10 +896,32 @@ $reviewScopeCwd.subscribe(scope => {
   }
 })
 
+// Workbench activity-bar SCM opened with `$reviewOpen` still false (the
+// activity bar closes the right-rail pref so we don't mount two Source Control
+// panes). `openReview()` already refreshes when ⌘G opens the classic pane —
+// don't double-fire on that edge.
+let prevReviewSurface = false
+
+$reviewSurfaceActive.subscribe(active => {
+  if (
+    active &&
+    !prevReviewSurface &&
+    !$reviewOpen.get() &&
+    $codeActivityPanelOpen.get() &&
+    $codeActivityView.get() === 'scm'
+  ) {
+    $reviewLoading.set(true)
+    void refreshReview()
+    void refreshShipInfo()
+  }
+
+  prevReviewSurface = active
+})
+
 // An outside terminal may have changed the tree while we were away.
 if (typeof window !== 'undefined') {
   window.addEventListener('focus', () => {
-    if ($reviewOpen.get()) {
+    if (isReviewSurfaceActive()) {
       scheduleReviewRefresh()
       refreshShipInfoIfStale()
     }

@@ -1,6 +1,7 @@
 import type {
   HermesGitBaseBranch,
   HermesGitBranch,
+  HermesGitHistory,
   HermesGitWorktree,
   HermesRepoPullRequests,
   HermesRepoStatus,
@@ -65,6 +66,15 @@ const remoteGit: GitBridge = {
     (await gitGet<{ branches: HermesGitBaseBranch[] }>('base-branches', { path: repoPath })).branches,
 
   repoStatus: repoPath => gitGet<HermesRepoStatus | null>('status', { path: repoPath }),
+
+  history: (repoPath, limit) =>
+    gitGet<HermesGitHistory>('history', { limit: limit === undefined ? undefined : String(limit), path: repoPath }),
+
+  fetch: repoPath => gitPost('fetch', { path: repoPath }),
+
+  pull: repoPath => gitPost('pull', { path: repoPath }),
+
+  sync: repoPath => gitPost('sync', { path: repoPath }),
 
   fileDiff: async (repoPath, filePath) =>
     (await gitGet<{ diff: string }>('file-diff', { file: filePath, path: repoPath })).diff,

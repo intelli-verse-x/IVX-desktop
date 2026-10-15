@@ -35,6 +35,7 @@ export function useWorkspaceRoots(
   cwd: string,
   contents: TreeNode[],
   extras: string[],
+  added: string[],
   onLoadChildren: (id: string) => void | Promise<void>,
   onNodeOpenChange: (id: string, open: boolean) => void,
   openState: Record<string, boolean>
@@ -42,13 +43,19 @@ export function useWorkspaceRoots(
   const [extraNodes, setExtraNodes] = useState<Record<string, TreeNode>>({})
   const [extraOpen, setExtraOpen] = useState<Record<string, boolean>>({})
   const multi = extras.length > 0
+  const addedKeys = new Set(added.map(cleanPath))
 
-  const data = multi
+  const data: TreeNode[] = multi
     ? [
-        { children: contents, id: cwd, isDirectory: true, name: folderName(cwd) },
-        ...extras.map(
-          folder => extraNodes[cleanPath(folder)] ?? { id: folder, isDirectory: true, name: folderName(folder) }
-        )
+        { children: contents, id: cwd, isDirectory: true, name: folderName(cwd), workspaceRoot: 'main' },
+        ...extras.map(folder => {
+          const key = cleanPath(folder)
+
+          return {
+            ...(extraNodes[key] ?? { id: folder, isDirectory: true, name: folderName(folder) }),
+            workspaceRoot: addedKeys.has(key) ? ('added' as const) : ('linked' as const)
+          }
+        })
       ]
     : contents
 
@@ -65,6 +72,7 @@ export function useWorkspaceRoots(
 
     try {
       const result = await readProjectDir(id, root)
+
       const children = (result.entries ?? []).map(entry => ({
         id: entry.path,
         isDirectory: entry.isDirectory,

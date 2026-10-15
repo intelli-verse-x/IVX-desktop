@@ -14,6 +14,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 
 from hermes_cli import web_git as _web_git
+from hermes_cli import web_git_history as _web_git_history
 from hermes_cli._subprocess_compat import bounded_probe_run
 from hermes_cli.web_deps import late
 from hermes_cli.web_server_files import _fs_path
@@ -207,3 +208,23 @@ async def git_worktree_remove_route(body: GitWorktreeRemoveBody):
 @router.post("/api/git/branch/switch")
 async def git_branch_switch_route(body: GitBranchSwitchBody):
     return await _git_op(_web_git.branch_switch, _git_path(body.path), body.branch)
+
+
+@router.get("/api/git/history")
+async def git_history_route(path: str, limit: Optional[int] = None):
+    return await _git_op(_web_git_history.history_log, _git_path(path), limit)
+
+
+@router.post("/api/git/fetch")
+async def git_fetch_route(body: GitPathBody):
+    return await _git_op(_web_git_history.sync_fetch, _git_path(body.path))
+
+
+@router.post("/api/git/pull")
+async def git_pull_route(body: GitPathBody):
+    return await _git_op(_web_git_history.sync_pull, _git_path(body.path))
+
+
+@router.post("/api/git/sync")
+async def git_sync_route(body: GitPathBody):
+    return await _git_op(_web_git_history.sync_branch, _git_path(body.path))

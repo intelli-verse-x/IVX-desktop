@@ -60,3 +60,21 @@ export function addWorkspaceFolder(cwd: string, folder: string): void {
   $workspaceFolders.set(map)
   writeMap(map)
 }
+
+/** Unlinks an added folder from the workspace. The folder on disk is untouched. */
+export function removeWorkspaceFolder(cwd: string, folder: string): void {
+  const key = cleanPath(cwd)
+  const target = cleanPath(folder)
+  const current = $workspaceFolders.get()[key] ?? []
+  const remaining = current.filter(item => cleanPath(item) !== target)
+
+  if (remaining.length === current.length) {
+    return
+  }
+
+  const { [key]: _removed, ...rest } = $workspaceFolders.get()
+  const map = remaining.length ? { ...rest, [key]: remaining } : rest
+
+  $workspaceFolders.set(map)
+  writeMap(map)
+}
