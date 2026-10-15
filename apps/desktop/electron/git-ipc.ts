@@ -5,6 +5,7 @@
 // plugin installs.
 import { ipcMain } from 'electron'
 
+import { historyLog, syncBranch, syncFetch, syncPull } from './git-history-ops'
 import { scanGitRepos } from './git-repo-scan'
 import {
   fileDiffVsHead,
@@ -63,6 +64,14 @@ export function registerGitIpc({ resolveGitBinary, resolveGhBinary }: GitIpcDeps
   // composer coding rail. Returns null on a non-repo / remote backend so the rail
   // hides cleanly rather than erroring.
   ipcMain.handle('hermes:git:repoStatus', async (_event, repoPath) => repoStatus(repoPath, resolveGitBinary()))
+
+  // Source Control Graph + Branch sync (VS Code's Fetch / Pull / Sync).
+  ipcMain.handle('hermes:git:history', async (_event, repoPath, limit) =>
+    historyLog(repoPath, limit, resolveGitBinary())
+  )
+  ipcMain.handle('hermes:git:fetch', async (_event, repoPath) => syncFetch(repoPath, resolveGitBinary()))
+  ipcMain.handle('hermes:git:pull', async (_event, repoPath) => syncPull(repoPath, resolveGitBinary()))
+  ipcMain.handle('hermes:git:sync', async (_event, repoPath) => syncBranch(repoPath, resolveGitBinary()))
 
   // Codex-style review pane: list changed files for a scope, fetch one file's
   // unified diff, and stage / unstage / revert. Reads return empty on failure;

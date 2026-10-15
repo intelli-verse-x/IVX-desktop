@@ -284,13 +284,23 @@ function statusLetter(file) {
 
 const isStaged = file => Boolean(file.index && file.index !== ' ' && file.index !== '?')
 
+// Status paths are relative to the work-tree root, so per-path review ops run
+// there even when the chat's folder is a subdirectory of the repo.
+async function repoTopLevel(cwd, gitBin) {
+  try {
+    return (await gitFor(cwd, gitBin).revparse(['--show-toplevel'])).trim() || cwd
+  } catch {
+    return cwd
+  }
+}
+
 async function reviewList(repoPath, scope, baseRef, gitBin) {
   let cwd
 
   try {
-    cwd = resolveRequestedPathForIpc(repoPath, { purpose: 'Review list' })
+    cwd = await repoTopLevel(resolveRequestedPathForIpc(repoPath, { purpose: 'Review list' }), gitBin)
   } catch {
-    return { files: [], base: null }
+    return { files: [], base: null, root: null }
   }
 
   const git = gitFor(cwd, gitBin)
@@ -300,7 +310,7 @@ async function reviewList(repoPath, scope, baseRef, gitBin) {
       const base = scope === 'branch' ? await branchBase(git) : baseRef
 
       if (!base) {
-        return { files: [], base: null }
+        return { files: [], base: null, root: cwd }
       }
 
       const range = scope === 'branch' ? `${base}...HEAD` : base
@@ -338,7 +348,7 @@ async function reviewList(repoPath, scope, baseRef, gitBin) {
       files.sort((a, b) => a.path.localeCompare(b.path))
       await fillUntrackedCounts(cwd, files)
 
-      return { files, base }
+      return { files, base, root: cwd }
     }
 
     // Default: uncommitted (staged + unstaged + untracked), one row per path.
@@ -371,9 +381,9 @@ async function reviewList(repoPath, scope, baseRef, gitBin) {
     files.sort((a, b) => a.path.localeCompare(b.path))
     await fillUntrackedCounts(cwd, files)
 
-    return { files, base: null }
+    return { files, base: null, root: cwd }
   } catch {
-    return { files: [], base: null }
+    return { files: [], base: null, root: null }
   }
 }
 
@@ -381,7 +391,7 @@ async function reviewDiff(repoPath, filePath, scope, baseRef, staged, gitBin) {
   let cwd
 
   try {
-    cwd = resolveRequestedPathForIpc(repoPath, { purpose: 'Review diff' })
+    cwd = await repoTopLevel(resolveRequestedPathForIpc(repoPath, { purpose: 'Review diff' }), gitBin)
   } catch {
     return ''
   }
@@ -459,7 +469,7 @@ async function fileDiffVsHead(repoPath, filePath, gitBin) {
 }
 
 async function reviewStage(repoPath, filePath, gitBin) {
-  const cwd = resolveRequestedPathForIpc(repoPath, { purpose: 'Review stage' })
+  const cwd = await repoTopLevel(resolveRequestedPathForIpc(repoPath, { purpose: 'Review stage' }), gitBin)
 
   await gitFor(cwd, gitBin).raw(filePath ? ['add', '--', filePath] : ['add', '-A'])
 
@@ -467,7 +477,7 @@ async function reviewStage(repoPath, filePath, gitBin) {
 }
 
 async function reviewUnstage(repoPath, filePath, gitBin) {
-  const cwd = resolveRequestedPathForIpc(repoPath, { purpose: 'Review unstage' })
+  const cwd = await repoTopLevel(resolveRequestedPathForIpc(repoPath, { purpose: 'Review unstage' }), gitBin)
 
   await gitFor(cwd, gitBin).raw(filePath ? ['reset', '-q', 'HEAD', '--', filePath] : ['reset', '-q', 'HEAD'])
 
@@ -477,7 +487,7 @@ async function reviewUnstage(repoPath, filePath, gitBin) {
 // Discard changes back to the committed state. Destructive — the renderer
 // confirms first. Restores tracked files and removes untracked ones.
 async function reviewRevert(repoPath, filePath, gitBin) {
-  const cwd = resolveRequestedPathForIpc(repoPath, { purpose: 'Review revert' })
+  const cwd = await repoTopLevel(resolveRequestedPathForIpc(repoPath, { purpose: 'Review revert' }), gitBin)
   const git = gitFor(cwd, gitBin)
 
   if (filePath) {
@@ -821,6 +831,7 @@ async function repoStatus(repoPath, gitBin) {
     branch: detached ? null : status.current || null,
     defaultBranch: await defaultBranchName(git),
     detached,
+    upstream: detached ? null : status.tracking || null,
     ahead: status.ahead || 0,
     behind: status.behind || 0,
     staged: files.filter(f => f.staged).length,
@@ -866,6 +877,7 @@ async function repoStatus(repoPath, gitBin) {
 
 export {
   branchBase,
+  defaultBranchName,
   fileDiffVsHead,
   gitFor,
   repoStatus,

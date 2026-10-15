@@ -9,11 +9,11 @@ import { Tip } from '@/components/ui/tooltip'
 import { useDelayedTrue } from '@/hooks/use-delayed-true'
 import { useI18n } from '@/i18n'
 import { normalizeOrLocalPreviewTarget } from '@/lib/local-preview'
+import { cleanPath } from '@/lib/path-compare'
 import { cn } from '@/lib/utils'
 import { refreshRepoStatus, registerRepoStatusCwd } from '@/store/coding-status'
 import { $panesFlipped } from '@/store/layout'
 import { notifyError } from '@/store/notifications'
-import { cleanPath } from '@/lib/path-compare'
 import { openPreview } from '@/store/preview'
 import {
   $activeProjectId,
@@ -23,8 +23,8 @@ import {
   openProjectAddFolder,
   openProjectCreate
 } from '@/store/projects'
-import { $workspaceFolders } from '@/store/workspace-folders'
 import { $focusedWorkspaceCwd } from '@/store/session-states'
+import { $workspaceFolders } from '@/store/workspace-folders'
 
 import { SidebarPanelLabel } from '../shell/sidebar-label'
 
@@ -269,7 +269,6 @@ function FilesystemTab({
       <FileTreeBody
         collapseNonce={collapseNonce}
         cwd={cwd}
-        projectFolders={projectFolders}
         data={data}
         error={error}
         loading={loading}
@@ -280,6 +279,7 @@ function FilesystemTab({
         onPreviewFile={onPreviewFile}
         onRetry={onRefresh}
         openState={openState}
+        projectFolders={projectFolders}
       />
     </div>
   )
@@ -329,12 +329,23 @@ function FileTreeBody({
   const { t } = useI18n()
   const r = t.rightSidebar
   const savedExtras = useStore($workspaceFolders)[cleanPath(cwd)] ?? []
+
   const extraFolders = [...projectFolders, ...savedExtras].filter((folder, index, all) => {
     const key = cleanPath(folder)
 
     return key !== cleanPath(cwd) && all.findIndex(item => cleanPath(item) === key) === index
   })
-  const workspace = useWorkspaceRoots(cwd, data, extraFolders, onLoadChildren, onNodeOpenChange, openState)
+
+  const workspace = useWorkspaceRoots(
+    cwd,
+    data,
+    extraFolders,
+    savedExtras,
+    onLoadChildren,
+    onNodeOpenChange,
+    openState
+  )
+
   // Stay blank for a beat, then skeleton — so a fast project switch doesn't
   // flash a jarring loading state.
   const showSkeleton = useDelayedTrue(loading && data.length === 0)

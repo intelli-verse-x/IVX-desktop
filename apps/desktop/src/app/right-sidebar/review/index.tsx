@@ -8,11 +8,12 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { DiffCount } from '@/components/ui/diff-count'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { Tip } from '@/components/ui/tooltip'
-import type { HermesReviewScope } from '@/global'
 import { useDelayedTrue } from '@/hooks/use-delayed-true'
 import { useI18n } from '@/i18n'
 import { displayPath } from '@/lib/display-path'
 import { cn } from '@/lib/utils'
+import { $scmView, type ScmView } from '@/store/code-activity'
+import { refreshRepoStatus } from '@/store/coding-status'
 import { $panesFlipped } from '@/store/layout'
 import { notifyError } from '@/store/notifications'
 import {
@@ -30,23 +31,34 @@ import {
   closeReview,
   confirmRevert,
   refreshReview,
+  refreshShipInfo,
   requestRevert,
+  reviewRepoCwd,
   stageReviewFile,
   toggleReviewTreeMode,
   unstageReviewFile
 } from '@/store/review'
+import { $scmHistoryLoading, refreshScmHistory } from '@/store/scm-history'
 
 import { SidebarPanelLabel } from '../../shell/sidebar-label'
 import { PaneEmptyState, RightSidebarSectionHeader } from '../index'
 
+import { ReviewBranchPanel } from './branch-panel'
 import { ReviewFileTree } from './file-tree'
+import { ReviewGraphPanel } from './graph-panel'
+import { ScmRepositories } from './repositories'
 import { ReviewShipBar } from './ship-bar'
 
 // Compact header/diff action buttons — micro hit targets packed tight, matching
 // the rest of the app's icon-action rows.
 const ACTION_BTN = 'size-5'
 
-export function ReviewPane() {
+interface ReviewPaneProps {
+  /** Narrow Sessions-sidebar host — stack scope + actions; drop chrome/close. */
+  embedded?: boolean
+}
+
+export function ReviewPane({ embedded = false }: ReviewPaneProps) {
   const { t } = useI18n()
   const c = t.statusStack.coding
   const panesFlipped = useStore($panesFlipped)
@@ -59,6 +71,8 @@ export function ReviewPane() {
   const revertTarget = useStore($reviewRevertTarget)
   const treeMode = useStore($reviewTreeMode)
   const scope = useStore($reviewScope)
+  const view = useStore($scmView)
+  const historyLoading = useStore($scmHistoryLoading)
   // Stage / unstage / revert and the ship bar act on the working tree, so they
   // only apply to the uncommitted scope; branch / last-turn are read-only.
   const isUncommitted = scope === 'uncommitted'
@@ -72,91 +86,157 @@ export function ReviewPane() {
   const showTreeSkeleton = useDelayedTrue(loading && !hasFiles)
   const showDiffSkeleton = useDelayedTrue(diffLoading)
 
+  const showChanges = view === 'changes'
+
+  const viewControl = (
+    <SegmentedControl<ScmView>
+      className={embedded ? 'w-full min-w-0' : 'mr-1 shrink-0'}
+      onChange={id => {
+        $scmView.set(id)
+
+        if (id === 'changes') {
+          $reviewScope.set('uncommitted')
+          void refreshReview()
+        } else {
+          clearReviewSelection()
+        }
+      }}
+      options={[
+        { id: 'changes', label: c.scmChanges },
+        { id: 'branch', label: c.scopeBranch },
+        { id: 'graph', label: c.scmGraph }
+      ]}
+      value={view}
+    />
+  )
+
+  const actionButtons = !showChanges ? (
+    <Tip label={t.rightSidebar.refreshTree}>
+      <Button
+        aria-label={t.rightSidebar.refreshTree}
+        className={ACTION_BTN}
+        onClick={() => {
+          void refreshRepoStatus(reviewRepoCwd())
+
+          if (view === 'graph') {
+            void refreshScmHistory()
+          } else {
+            void refreshShipInfo()
+          }
+        }}
+        size="icon-xs"
+        variant="ghost"
+      >
+        <Codicon name="refresh" size="0.8125rem" spinning={view === 'graph' && historyLoading} />
+      </Button>
+    </Tip>
+  ) : (
+    <>
+      <Tip label={treeMode === 'tree' ? c.viewAsList : c.viewAsTree}>
+        <Button
+          aria-label={treeMode === 'tree' ? c.viewAsList : c.viewAsTree}
+          className={ACTION_BTN}
+          disabled={!hasFiles}
+          onClick={toggleReviewTreeMode}
+          size="icon-xs"
+          variant="ghost"
+        >
+          <Codicon name={treeMode === 'tree' ? 'list-flat' : 'list-tree'} size="0.8125rem" />
+        </Button>
+      </Tip>
+      <Tip label={c.stageAll}>
+        <Button
+          aria-label={c.stageAll}
+          className={ACTION_BTN}
+          disabled={!hasFiles || !isUncommitted}
+          onClick={() => void stageReviewFile(null).catch(err => notifyError(err, c.stageAll))}
+          size="icon-xs"
+          variant="ghost"
+        >
+          <Codicon name="add" size="0.8125rem" />
+        </Button>
+      </Tip>
+      <Tip label={c.revertAll}>
+        <Button
+          aria-label={c.revertAll}
+          className={ACTION_BTN}
+          disabled={!hasFiles || !isUncommitted}
+          onClick={() => requestRevert(null)}
+          size="icon-xs"
+          variant="ghost"
+        >
+          <Codicon name="discard" size="0.8125rem" />
+        </Button>
+      </Tip>
+      <Tip label={t.rightSidebar.refreshTree}>
+        <Button
+          aria-label={t.rightSidebar.refreshTree}
+          className={ACTION_BTN}
+          onClick={() => void refreshReview()}
+          size="icon-xs"
+          variant="ghost"
+        >
+          <Codicon name="refresh" size="0.8125rem" spinning={loading} />
+        </Button>
+      </Tip>
+    </>
+  )
+
   return (
     <aside
       aria-label={c.review}
       className={cn(
-        'before:pointer-events-none relative flex h-full w-full min-w-0 flex-col overflow-hidden border-(--ui-stroke-secondary) bg-(--ui-sidebar-surface-background) pt-(--titlebar-height) text-(--ui-text-tertiary)',
-        panesFlipped
-          ? 'border-r shadow-[inset_-0.0625rem_0_0_color-mix(in_srgb,white_18%,transparent)]'
-          : 'border-l shadow-[inset_0.0625rem_0_0_color-mix(in_srgb,white_18%,transparent)]'
+        'before:pointer-events-none relative flex h-full w-full min-w-0 flex-col overflow-hidden bg-(--ui-sidebar-surface-background) text-(--ui-text-tertiary)',
+        embedded
+          ? 'border-0 pt-0 shadow-none'
+          : cn(
+              'border-(--ui-stroke-secondary) pt-(--titlebar-height)',
+              panesFlipped
+                ? 'border-r shadow-[inset_-0.0625rem_0_0_color-mix(in_srgb,white_18%,transparent)]'
+                : 'border-l shadow-[inset_0.0625rem_0_0_color-mix(in_srgb,white_18%,transparent)]'
+            )
       )}
     >
-      {(loading || isRepo) && (
-        <RightSidebarSectionHeader data-suppress-pane-reveal-side="">
-          <div className="flex min-w-0 flex-1">
-            {/* Pure self-naming label — redundant under a zone tab that already
-                says "review", so the zone header hides it (styles.css). */}
-            <SidebarPanelLabel data-pane-self-label="">{c.review}</SidebarPanelLabel>
-          </div>
-          <SegmentedControl<HermesReviewScope>
-            className="mr-1"
-            onChange={id => {
-              $reviewScope.set(id)
-              clearReviewSelection()
-              void refreshReview()
-            }}
-            options={[
-              { id: 'uncommitted', label: c.scopeUncommitted },
-              { id: 'branch', label: c.scopeBranch },
-              { id: 'lastTurn', label: c.scopeLastTurn }
-            ]}
-            value={scope}
-          />
-          <Tip label={treeMode === 'tree' ? c.viewAsList : c.viewAsTree}>
+      {embedded && <ScmRepositories />}
+
+      {embedded ? (
+        // Narrow Sessions-sidebar host: stack tabs + actions so the segmented
+        // control never collides with icon buttons.
+        <div
+          className="flex shrink-0 flex-col gap-1.5 border-b border-(--ui-stroke-quaternary) px-2.5 py-2"
+          data-suppress-pane-reveal-side=""
+        >
+          {viewControl}
+          {(loading || isRepo) && <div className="flex items-center justify-end gap-0.5">{actionButtons}</div>}
+        </div>
+      ) : (
+        (loading || isRepo || !showChanges) && (
+          <RightSidebarSectionHeader data-suppress-pane-reveal-side="">
+            <div className="flex min-w-0 flex-1">
+              {/* Pure self-naming label — redundant under a zone tab that already
+                  says "review", so the zone header hides it (styles.css). */}
+              <SidebarPanelLabel data-pane-self-label="">{c.review}</SidebarPanelLabel>
+            </div>
+            {viewControl}
+            {actionButtons}
             <Button
-              aria-label={treeMode === 'tree' ? c.viewAsList : c.viewAsTree}
+              aria-label={c.close}
               className={ACTION_BTN}
-              disabled={!hasFiles}
-              onClick={toggleReviewTreeMode}
+              onClick={() => closeReview()}
               size="icon-xs"
               variant="ghost"
             >
-              <Codicon name={treeMode === 'tree' ? 'list-flat' : 'list-tree'} size="0.8125rem" />
+              <Codicon name="close" size="0.8125rem" />
             </Button>
-          </Tip>
-          <Tip label={c.stageAll}>
-            <Button
-              aria-label={c.stageAll}
-              className={ACTION_BTN}
-              disabled={!hasFiles || !isUncommitted}
-              onClick={() => void stageReviewFile(null).catch(err => notifyError(err, c.stageAll))}
-              size="icon-xs"
-              variant="ghost"
-            >
-              <Codicon name="add" size="0.8125rem" />
-            </Button>
-          </Tip>
-          <Tip label={c.revertAll}>
-            <Button
-              aria-label={c.revertAll}
-              className={ACTION_BTN}
-              disabled={!hasFiles || !isUncommitted}
-              onClick={() => requestRevert(null)}
-              size="icon-xs"
-              variant="ghost"
-            >
-              <Codicon name="discard" size="0.8125rem" />
-            </Button>
-          </Tip>
-          <Tip label={t.rightSidebar.refreshTree}>
-            <Button
-              aria-label={t.rightSidebar.refreshTree}
-              className={ACTION_BTN}
-              onClick={() => void refreshReview()}
-              size="icon-xs"
-              variant="ghost"
-            >
-              <Codicon name="refresh" size="0.8125rem" spinning={loading} />
-            </Button>
-          </Tip>
-          <Button aria-label={c.close} className={ACTION_BTN} onClick={closeReview} size="icon-xs" variant="ghost">
-            <Codicon name="close" size="0.8125rem" />
-          </Button>
-        </RightSidebarSectionHeader>
+          </RightSidebarSectionHeader>
+        )
       )}
 
-      {loading || isRepo ? (
+      {view === 'branch' ? (
+        <ReviewBranchPanel />
+      ) : view === 'graph' ? (
+        <ReviewGraphPanel />
+      ) : loading || isRepo ? (
         hasFiles ? (
           <ReviewFileTree />
         ) : showTreeSkeleton ? (
@@ -171,8 +251,8 @@ export function ReviewPane() {
         <PaneEmptyState label={t.rightSidebar.noDiffs} />
       )}
 
-      {/* Selected file's diff — reuses the shiki-highlighted FileDiffPanel. */}
-      {selectedFile && (
+      {/* Selected file's diff — Changes only. */}
+      {showChanges && selectedFile && (diffLoading || diff !== null) && (
         <div className="flex max-h-[55%] shrink-0 flex-col border-t border-(--ui-stroke-secondary)">
           <div className="flex items-center gap-1 px-2.5 py-1.5" data-suppress-pane-reveal-side="">
             <span
@@ -223,7 +303,7 @@ export function ReviewPane() {
         </div>
       )}
 
-      <ReviewShipBar />
+      {showChanges && <ReviewShipBar />}
 
       <ConfirmDialog
         confirmLabel={revertingAll ? c.revertAll : c.revert}

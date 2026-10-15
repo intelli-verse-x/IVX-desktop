@@ -53,10 +53,22 @@ interface FileEntryContextMenuProps {
   path: string
   /** Base dir for "Copy Relative Path" (the cwd / repo root). Omit to hide it. */
   relativeTo?: null | string
+  /** A top-level workspace folder: never offer rename/delete on disk (VS Code). */
+  workspaceRoot?: boolean
+  /** Unlinks an added root folder from the workspace without touching disk. */
+  onRemoveFromWorkspace?: () => void
 }
 
 /** Right-click menu shared by both file trees (browser + review/git). */
-export function FileEntryContextMenu({ children, isDirectory, name, path, relativeTo }: FileEntryContextMenuProps) {
+export function FileEntryContextMenu({
+  children,
+  isDirectory,
+  name,
+  onRemoveFromWorkspace,
+  path,
+  relativeTo,
+  workspaceRoot = false
+}: FileEntryContextMenuProps) {
   const { t } = useI18n()
   const m = t.fileMenu
   // Reveal / rename / delete need the local filesystem; hide them on a remote
@@ -91,7 +103,13 @@ export function FileEntryContextMenu({ children, isDirectory, name, path, relati
             <ContextMenuItem onSelect={() => void downloadRemoteFile(path)}>{m.download}</ContextMenuItem>
           </>
         )}
-        {localFs && (
+        {onRemoveFromWorkspace && (
+          <>
+            <ContextMenuSeparator />
+            <ContextMenuItem onSelect={onRemoveFromWorkspace}>{m.removeFromWorkspace}</ContextMenuItem>
+          </>
+        )}
+        {localFs && !workspaceRoot && (
           <>
             <ContextMenuSeparator />
             <ContextMenuItem onSelect={() => beginInlineRename(path)}>{m.rename}</ContextMenuItem>
@@ -115,7 +133,7 @@ export function FileActionDialogs() {
   return (
     <ConfirmDialog
       confirmLabel={t.fileMenu.delete}
-      description={t.fileMenu.deleteBody}
+      description={IS_WIN ? t.fileMenu.deleteBodyRecycleBin : t.fileMenu.deleteBody}
       destructive
       onClose={closeFileActionDialog}
       onConfirm={() => {
