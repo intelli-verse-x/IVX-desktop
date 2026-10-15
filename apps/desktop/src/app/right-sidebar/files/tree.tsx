@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 import { type RepoChangeKind, repoChangeKindForPath } from '@/store/coding-status'
 import { $renamingPath, beginInlineRename } from '@/store/file-actions'
 import { $revealInTreeRequest } from '@/store/layout'
+import { removeWorkspaceFolder } from '@/store/workspace-folders'
 
 import { FileEntryContextMenu, InlineRenameInput, isRenameShortcut } from '../file-actions'
 
@@ -393,7 +394,18 @@ function ProjectTreeRow({
   }
 
   return (
-    <FileEntryContextMenu isDirectory={isFolder} name={node.data.name} path={node.data.id} relativeTo={relativeTo}>
+    <FileEntryContextMenu
+      isDirectory={isFolder}
+      name={node.data.name}
+      onRemoveFromWorkspace={
+        node.data.workspaceRoot === 'added' && relativeTo
+          ? () => removeWorkspaceFolder(relativeTo, node.data.id)
+          : undefined
+      }
+      path={node.data.id}
+      relativeTo={relativeTo}
+      workspaceRoot={Boolean(node.data.workspaceRoot)}
+    >
       {row}
     </FileEntryContextMenu>
   )

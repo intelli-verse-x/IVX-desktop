@@ -556,6 +556,8 @@ export interface Translations {
     renameLabel: string
     deleteTitle: (name: string) => string
     deleteBody: string
+    deleteBodyRecycleBin: string
+    removeFromWorkspace: string
     pathCopied: string
     revealMissing: string
     revealUnavailable: string
@@ -3580,6 +3582,28 @@ export interface Translations {
       switchTo: (branch: string) => string
       switchFailed: (branch: string) => string
       worktrees: string
+      scmChanges: string
+      scmGraph: string
+      repositories: string
+      upstream: string
+      notPublished: string
+      publishBranch: string
+      syncChanges: string
+      fetch: string
+      pull: string
+      syncFailed: string
+      upToDate: (upstream: string) => string
+      baseBranch: string
+      branches: string
+      filterBranches: string
+      currentBranch: string
+      checkedOutElsewhere: string
+      remoteBranch: string
+      uncommittedChanges: (count: number) => string
+      viewChanges: string
+      noCommits: string
+      loadMoreCommits: string
+      copySha: string
     }
   }
 
