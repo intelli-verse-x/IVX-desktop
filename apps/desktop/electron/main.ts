@@ -280,6 +280,8 @@ import { resolveGatewayVersion } from './gateway-version'
 import { probeGatewayWebSocket, spawnedBackendProbeOptions } from './gateway-ws-probe'
 import { windowsGitCandidates } from './git-binary-candidates'
 import { registerBrandLoginIpc } from './brand-login'
+import { registerIvxServiceIpc } from './ivx-service'
+import { registerDesktopAccessIpc } from './desktop-access'
 import { registerGitIpc } from './git-ipc'
 import { desktopBackendSpawnEnv, guestOnboardingEnabled } from './guest-onboarding'
 import { readAndConsumeHandoffResult } from './handoff-result'
@@ -5187,7 +5189,17 @@ function resolveRendererIndex() {
 }
 
 function rendererBaseUrl() {
-  return DEV_SERVER || packagedRendererServer?.origin || pathToFileURL(resolveRendererIndex()).toString()
+  const base = DEV_SERVER || packagedRendererServer?.origin || pathToFileURL(resolveRendererIndex()).toString()
+
+  if (process.env.HERMES_CLIENT_PREVIEW === '1' && DEV_SERVER) {
+    const url = new URL(base)
+
+    url.searchParams.set('clientPreview', '1')
+
+    return url.toString()
+  }
+
+  return base
 }
 
 // True when `dir` lives inside the packaged app bundle / install tree.
@@ -18683,6 +18695,8 @@ registerFsIpc({
 // Git-driven features (worktrees, review pane, repo scan) — see git-ipc.ts.
 registerGitIpc({ resolveGitBinary, resolveGhBinary })
 registerBrandLoginIpc()
+registerIvxServiceIpc()
+registerDesktopAccessIpc()
 
 // Client-side loopback callback for MCP OAuth against remote backends — see
 // mcp-oauth-callback-ipc.ts.

@@ -3,6 +3,25 @@ import { FIELD_DESCRIPTIONS, FIELD_LABELS } from '@/app/settings/constants'
 import type { Translations } from './types'
 
 export const en: Translations = {
+  usageMode: {
+    title: 'How do you want to use IVX-Agency?',
+    body: 'Choose once. You can change providers later in Settings.',
+    ivxTitle: 'Use IntelliVerseX service',
+    ivxBody: 'Use our managed models and endpoints. No API keys to paste.',
+    ivxBusy: 'Enabling IntelliVerseX service…',
+    byokTitle: 'Use my own API keys',
+    byokBody: 'Add OpenAI, Anthropic, OpenRouter, or another provider yourself.',
+    loginTitle: 'Sign in to continue',
+    loginBody: 'Sign in on this app first. Plans show after you are signed in.',
+    loginAction: 'Sign in',
+    loginBusy: 'Waiting for sign-in…',
+    plansTitle: 'Choose a plan',
+    plansBody: 'Pick a plan to pay with PayPal and use the IntelliVerseX service.',
+    planLabel: (amount: number) => `$${amount} plan`,
+    planBusy: 'Opening PayPal…',
+    blockedTitle: 'Desktop access is paused',
+    blockedBody: 'A super admin paused or turned off this login. You can look around. Chat stays off until access is resumed.'
+  },
   externalOpenFailed: {
     title: 'Couldn’t open this link',
     message: 'No browser is registered to open this address. Copy the link and open it manually.',

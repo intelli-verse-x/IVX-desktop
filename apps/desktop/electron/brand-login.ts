@@ -22,11 +22,19 @@ let loginWindow: BrowserWindow | null = null
 let loginInFlight: Promise<BrandSession> | null = null
 let paymentWindow: BrowserWindow | null = null
 
-function brandPaymentUrl(appId: string): string {
+function brandPaymentUrl(appId: string, amountUsd?: number): string {
   const id = appId.trim()
-  const base = `${PORTAL_ORIGIN}/desktop/wallet`
+  const url = new URL(`${PORTAL_ORIGIN}/desktop/wallet`)
 
-  return id ? `${base}?appId=${encodeURIComponent(id)}` : base
+  if (id) {
+    url.searchParams.set('appId', id)
+  }
+
+  if (amountUsd === 50 || amountUsd === 100 || amountUsd === 200) {
+    url.searchParams.set('amount', String(amountUsd))
+  }
+
+  return url.toString()
 }
 
 function isDesktopWalletPath(pathname: string): boolean {
@@ -71,9 +79,12 @@ function isPaymentNavigationAllowed(raw: string): boolean {
 }
 
 /** Open brand wallet in the same portal cookie jar so Unlock does not force a second login. */
-function openPayment(appId: string): Promise<BrandSession> {
+function openPayment(appId: string, amountUsd?: number, directUrl?: string): Promise<BrandSession> {
+  const target =
+    directUrl && isPaymentNavigationAllowed(directUrl) ? directUrl : brandPaymentUrl(appId, amountUsd)
+
   if (paymentWindow && !paymentWindow.isDestroyed()) {
-    void paymentWindow.loadURL(brandPaymentUrl(appId))
+    void paymentWindow.loadURL(target)
     paymentWindow.focus()
 
     return currentBrand()
@@ -160,7 +171,7 @@ function openPayment(appId: string): Promise<BrandSession> {
     void (async () => {
       try {
         if (!win.isDestroyed()) {
-          await win.loadURL(brandPaymentUrl(appId))
+          await win.loadURL(target)
           win.focus()
         }
       } catch (error) {
@@ -428,6 +439,14 @@ function openLogin(): Promise<BrandSession> {
   return loginInFlight
 }
 
+export function openCheckoutUrl(url: string): Promise<BrandSession> {
+  if (!isPaymentNavigationAllowed(url)) {
+    return Promise.reject(new Error('Payment URL is not allowed.'))
+  }
+
+  return openPayment('', undefined, url)
+}
+
 export function registerBrandLoginIpc(): void {
   ipcMain.handle('hermes:brand:get', () => currentBrand())
   ipcMain.handle('hermes:brand:signIn', () => openLogin())
@@ -451,14 +470,15 @@ export function registerBrandLoginIpc(): void {
   ipcMain.handle('hermes:brand:saveConnector', async (_event, connectorId: unknown, credential: unknown) =>
     saveBrandConnector(await currentBrand(), connectorId, credential)
   )
-  ipcMain.handle('hermes:brand:openPayment', async (_event, appId: unknown) => {
+  ipcMain.handle('hermes:brand:openPayment', async (_event, appId: unknown, amountUsd: unknown) => {
     const current = await currentBrand()
     const requested = typeof appId === 'string' ? appId.trim() : ''
     const target =
       requested && (current.isSuper || current.appIds.includes(requested) || requested === current.activeAppId)
         ? requested
         : current.activeAppId
+    const amount = amountUsd === 50 || amountUsd === 100 || amountUsd === 200 ? amountUsd : undefined
 
-    return openPayment(target)
+    return openPayment(target, amount)
   })
 }
