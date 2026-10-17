@@ -4,6 +4,25 @@ import { defineLocale, type TranslationOverrides } from './define-locale'
 import { introEs } from './intro-es'
 
 export const esOverrides = {
+  usageMode: {
+    title: '¿Cómo quieres usar IVX-Agency?',
+    body: 'Elige una vez. Puedes cambiar de proveedor más tarde en Ajustes.',
+    ivxTitle: 'Usar el servicio IntelliVerseX',
+    ivxBody: 'Nuestros modelos y endpoints gestionados. Sin pegar claves API.',
+    ivxBusy: 'Activando el servicio IntelliVerseX…',
+    byokTitle: 'Usar mis propias claves API',
+    byokBody: 'Añade OpenAI, Anthropic, OpenRouter u otro proveedor tú mismo.',
+    loginTitle: 'Inicia sesión para continuar',
+    loginBody: 'Inicia sesión primero en esta app. Los planes aparecen después.',
+    loginAction: 'Iniciar sesión',
+    loginBusy: 'Esperando el inicio de sesión…',
+    plansTitle: 'Elige un plan',
+    plansBody: 'Elige un plan, paga con PayPal y usa el servicio IntelliVerseX.',
+    planLabel: (amount: number) => `Plan de $${amount}`,
+    planBusy: 'Abriendo PayPal…',
+    blockedTitle: 'El acceso de escritorio está en pausa',
+    blockedBody: 'Un super admin pausó o apagó este acceso. Puedes mirar la app. El chat sigue cerrado hasta que se reanude.'
+  },
   sharedMetrics: {
     consentTitle: '¿Nos ayudas a mejorar Hermes?',
     consentBody:

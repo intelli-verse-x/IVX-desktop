@@ -46,7 +46,34 @@ declare global {
         connectors?: () => Promise<DesktopBrandConnectorList>
         saveConnector?: (connectorId: string, credential: string) => Promise<DesktopBrandConnectorList>
         /** Opens brand wallet in the portal session window (no second browser login). */
-        openPayment?: (appId?: string) => Promise<DesktopBrandSession>
+        openPayment?: (appId?: string, amountUsd?: 50 | 100 | 200) => Promise<DesktopBrandSession>
+      }
+      /** Bundled IVX managed inference endpoint (from main-process env). */
+      ivxService?: {
+        getConfig: () => Promise<null | { apiKey: string; baseUrl: string; model: string }>
+      }
+      desktopAccess?: {
+        status: (appId?: string) => Promise<null | {
+          email: string
+          appId: string
+          status: 'active' | 'paused' | 'killed'
+          free: boolean
+          creditCents: number
+          spentCents: number
+          inputTokens: number
+          outputTokens: number
+          allowed: boolean
+          reason: string
+        }>
+        checkout: (amountUsd: 50 | 100 | 200, appId?: string) => Promise<{ url: string }>
+        openUrl: (url: string) => Promise<DesktopBrandSession>
+        reportUsage: (payload: {
+          inputTokens: number
+          outputTokens: number
+          costUsd: number
+          model?: string
+          appId?: string
+        }) => Promise<null | { allowed: boolean; reason: string }>
       }
       // Registry-scoped backend resolution: dial (connectionId, profile). An
       // empty/local connectionId delegates to the legacy getConnection path.

@@ -44,7 +44,17 @@ contextBridge.exposeInMainWorld('hermesDesktop', {
     select: appId => ipcRenderer.invoke('hermes:brand:select', appId),
     connectors: () => ipcRenderer.invoke('hermes:brand:connectors'),
     saveConnector: (connectorId, credential) => ipcRenderer.invoke('hermes:brand:saveConnector', connectorId, credential),
-    openPayment: appId => ipcRenderer.invoke('hermes:brand:openPayment', appId)
+    openPayment: (appId, amountUsd) => ipcRenderer.invoke('hermes:brand:openPayment', appId, amountUsd)
+  },
+  // Managed IntelliVerseX inference credentials (env on the main process).
+  ivxService: {
+    getConfig: () => ipcRenderer.invoke('hermes:ivxService:getConfig')
+  },
+  desktopAccess: {
+    status: appId => ipcRenderer.invoke('hermes:desktopAccess:status', appId),
+    checkout: (amountUsd, appId) => ipcRenderer.invoke('hermes:desktopAccess:checkout', amountUsd, appId),
+    openUrl: url => ipcRenderer.invoke('hermes:desktopAccess:openUrl', url),
+    reportUsage: payload => ipcRenderer.invoke('hermes:desktopAccess:usage', payload)
   },
   // Registry-scoped backend resolution: { connectionId, profile } → descriptor.
   getConnectionFor: payload => ipcRenderer.invoke('hermes:connection:for', payload),

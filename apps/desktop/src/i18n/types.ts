@@ -66,6 +66,26 @@ interface AuxTaskCopy {
 }
 
 export interface Translations {
+  /** Post-login / first-run: IVX managed service vs bring-your-own API keys. */
+  usageMode: {
+    title: string
+    body: string
+    ivxTitle: string
+    ivxBody: string
+    ivxBusy: string
+    byokTitle: string
+    byokBody: string
+    loginTitle: string
+    loginBody: string
+    loginAction: string
+    loginBusy: string
+    plansTitle: string
+    plansBody: string
+    planLabel: (amount: number) => string
+    planBusy: string
+    blockedTitle: string
+    blockedBody: string
+  }
   /** Shared-metrics consent: first-run dialog + Settings › Safety toggles. */
   sharedMetrics: {
     consentTitle: string
