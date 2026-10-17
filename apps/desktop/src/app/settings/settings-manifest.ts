@@ -322,14 +322,18 @@ export interface SettingSearchTarget extends SettingCopy {
 
 /** Every manifest row the command palette can land on right now, copy resolved. */
 export function settingSearchTargets(t: Translations): SettingSearchTarget[] {
-  return (Object.keys(SETTINGS_MANIFEST) as ManifestViewKey[]).flatMap(viewKey =>
-    Object.entries(definitions(viewKey))
-      .filter(([, setting]) => setting.available?.() ?? true)
-      .map(([key, setting]) => ({
-        id: SETTING_IDS[viewKey][key as keyof (typeof SETTING_IDS)[typeof viewKey]],
-        keywords: [...setting.keywords],
-        view: manifestView(viewKey),
-        ...setting.copy(t)
-      }))
-  )
+  // Gateways settings UI is hidden for all users — keep the manifest for
+  // deep-link ids, but never surface those rows in ⌘K / settings search.
+  return (Object.keys(SETTINGS_MANIFEST) as ManifestViewKey[])
+    .filter(viewKey => viewKey !== 'gateway')
+    .flatMap(viewKey =>
+      Object.entries(definitions(viewKey))
+        .filter(([, setting]) => setting.available?.() ?? true)
+        .map(([key, setting]) => ({
+          id: SETTING_IDS[viewKey][key as keyof (typeof SETTING_IDS)[typeof viewKey]],
+          keywords: [...setting.keywords],
+          view: manifestView(viewKey),
+          ...setting.copy(t)
+        }))
+    )
 }

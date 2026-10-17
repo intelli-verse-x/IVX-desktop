@@ -17,6 +17,7 @@ import { resetBrowseState } from '@/store/composer-input-history'
 import { enqueueQueuedPrompt, type QueuedPromptEntry } from '@/store/composer-queue'
 import { hasConnectionRequest, skipConnectionRequest } from '@/store/connection-request'
 import { notify } from '@/store/notifications'
+import { presentUsagePrompt, refreshDesktopAccess, usageGateActive } from '@/store/usage-mode'
 import { hasBlockingPromptRequest } from '@/store/prompts'
 
 import { cloneAttachments, type QueueEditState } from '../composer-utils'
@@ -221,7 +222,7 @@ export function useComposerSubmit({
     [activeQueueSessionKeyRef, inputDisabled, paneVisible, scope.target, sessionId, surfaceId]
   )
 
-  const submitDraft = () => {
+  const submitDraft = (accessChecked = false) => {
     if (disabled) {
       return
     }
@@ -250,6 +251,20 @@ export function useComposerSubmit({
     // on the way out so it attaches instead of submitting as inert text.
     const text = pathifyRefs(draftRef.current)
     const payloadPresent = text.trim().length > 0 || attachments.length > 0
+
+    // Own keys can chat immediately. Our service can chat after a plan is chosen.
+    // Closing the first-launch dialog only pauses it — a real send brings it back.
+    if (payloadPresent && !accessChecked && usageGateActive()) {
+      void refreshDesktopAccess().finally(() => submitDraft(true))
+
+      return
+    }
+
+    if (payloadPresent && usageGateActive()) {
+      presentUsagePrompt()
+
+      return
+    }
 
     // A clarify card parked on this session owns the turn: the agent is blocked
     // inside its tool batch waiting on `clarify.respond`, so a follow-up routed

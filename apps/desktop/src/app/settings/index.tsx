@@ -147,11 +147,10 @@ export function SettingsView({ onClose, onConfigSaved, onMainModelChanged }: Set
 
   const setActiveView = useCallback((view: SettingsViewId) => openSettingsPage(view), [openSettingsPage])
 
-  // Connections merged into the unified Gateways page: land old
-  // `?tab=connections` routes/bookmarks there instead of a dead entry.
+  // Gateways UI is hidden for all users — deep links land on Providers.
   useEffect(() => {
-    if (activeView === 'connections') {
-      setActiveView('gateway')
+    if (activeView === 'connections' || activeView === 'gateway') {
+      setActiveView('providers')
     }
   }, [activeView, setActiveView])
   // Providers subnav (Accounts vs API keys) lives in its own param so each
@@ -345,13 +344,6 @@ export function SettingsView({ onClose, onConfigSaved, onMainModelChanged }: Set
             id: 'providers',
             label: t.settings.nav.providers,
             onSelect: () => setActiveView('providers')
-          },
-          {
-            active: activeView === 'gateway',
-            icon: Globe,
-            id: 'gateway',
-            label: t.settings.nav.gateway,
-            onSelect: () => setActiveView('gateway')
           },
           {
             active: activeView === 'keybinds',

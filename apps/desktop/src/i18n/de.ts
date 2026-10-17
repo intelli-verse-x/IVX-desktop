@@ -4,6 +4,25 @@ import { defineLocale, type TranslationOverrides } from './define-locale'
 import { introDe } from './intro-de'
 
 export const deOverrides = {
+  usageMode: {
+    title: 'Wie möchten Sie IVX-Agency nutzen?',
+    body: 'Einmal wählen. Anbieter können Sie später in den Einstellungen ändern.',
+    ivxTitle: 'IntelliVerseX-Service nutzen',
+    ivxBody: 'Unsere verwalteten Modelle und Endpunkte. Keine API-Schlüssel nötig.',
+    ivxBusy: 'IntelliVerseX-Service wird aktiviert…',
+    byokTitle: 'Eigene API-Schlüssel verwenden',
+    byokBody: 'OpenAI, Anthropic, OpenRouter oder einen anderen Anbieter selbst eintragen.',
+    loginTitle: 'Zum Fortfahren anmelden',
+    loginBody: 'Melden Sie sich zuerst in dieser App an. Die Pläne erscheinen danach.',
+    loginAction: 'Anmelden',
+    loginBusy: 'Warten auf die Anmeldung…',
+    plansTitle: 'Plan wählen',
+    plansBody: 'Wählen Sie einen Plan, zahlen Sie mit PayPal und nutzen Sie den IntelliVerseX-Service.',
+    planLabel: (amount: number) => `Plan $${amount}`,
+    planBusy: 'PayPal wird geöffnet…',
+    blockedTitle: 'Desktop-Zugriff ist pausiert',
+    blockedBody: 'Ein Super-Admin hat dieses Login pausiert oder abgeschaltet. Schauen ist möglich. Der Chat bleibt aus, bis der Zugriff wieder aktiv ist.'
+  },
   sharedMetrics: {
     consentTitle: 'Hermes verbessern helfen?',
     consentBody:
