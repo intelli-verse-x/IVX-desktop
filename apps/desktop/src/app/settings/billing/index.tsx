@@ -31,6 +31,7 @@ import { StepUpInlineAction } from './inline-feedback'
 import { openExternal } from './open-external'
 import { BillingPlansView } from './plans-view'
 import { createSimulatedBillingApi } from './simulated-api'
+import { TokenUsage } from './token-usage'
 import type { BillingStateResponse } from './types'
 import {
   type BillingAccountRowView,
@@ -569,6 +570,8 @@ function BillingSettingsContent({
           </div>
         </SettingsSection>
       )}
+
+      <TokenUsage />
 
       {
         // no endpoint yet — NAS capability-board gap
