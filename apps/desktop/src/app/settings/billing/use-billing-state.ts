@@ -3,9 +3,6 @@ import { useQuery } from '@tanstack/react-query'
 import type { Translations } from '@/i18n'
 import { en } from '@/i18n/en'
 import { fmtDate } from '@/lib/time'
-import { FREE_TIER_MODEL } from '@/store/free-tier'
-import { openFreeTierSignIn } from '@/store/free-tier-sign-in'
-
 import type { BillingRefusal, BillingResult } from './api'
 import { useBillingApi } from './api'
 import { resolveRefusal } from './errors'
@@ -218,19 +215,10 @@ export function deriveBillingView(
   // Read BEFORE the logged-out branch: a free-tier install has no account, so
   // `logged_in` is false and the generic "connect your account" notice would
   // otherwise win and tell the user to go to the portal.
-  if (billing.free_tier_account) {
-    return freeTierView(billing, b)
-  }
-
-  // Signing in is the only thing that writes a credential; a portal link never would, so the
-  // page would stay logged out after the user logged in on the web (#87792).
-  if (!billing.logged_in || subscription?.logged_in === false) {
+  // IntelliVerseX Billing uses Desktop access + portal plans. Do not offer Nous
+  // free-tier or "Connect your Nous account" on this page.
+  if (billing.free_tier_account || !billing.logged_in || subscription?.logged_in === false) {
     return {
-      notice: {
-        action: { label: b.state.notice.loggedOut.action, onSelect: openFreeTierSignIn },
-        message: b.state.notice.loggedOut.message,
-        title: b.state.notice.loggedOut.title
-      },
       status: 'logged_out',
       summary: emptySummary(b),
       tiers: [],
@@ -327,36 +315,6 @@ function emptySummary(b: Translations['settings']['billing']): BillingSummaryIte
     { label: b.summary.plan, value: EMPTY_BILLING_VALUE },
     { label: b.summary.autoRefill, value: EMPTY_BILLING_VALUE }
   ]
-}
-
-/**
- * The no-account state: nothing is owed, nothing is owned, and every money
- * control would be a lie. So the page collapses to one notice, a three-item
- * summary, and a single plan card whose only action is signing in — no payment,
- * credits, auto-refill or usage sections at all.
- */
-function freeTierView(billing: BillingStateResponse, b: Translations['settings']['billing']): BillingView {
-  return {
-    notice: {
-      action: { label: b.freeTier.signIn, onSelect: openFreeTierSignIn },
-      message: b.freeTier.message,
-      title: b.freeTier.title,
-      tone: 'info'
-    },
-    plan: {
-      caption: b.freeTier.caption,
-      tierName: b.freeTier.name
-    },
-    planFootnote: b.freeTier.footnote,
-    status: 'free_tier',
-    summary: [
-      { label: b.summary.plan, value: b.freeTier.plan },
-      { label: b.freeTier.model, value: billing.free_tier_model ?? FREE_TIER_MODEL },
-      { label: b.freeTier.connectors, tone: 'primary', value: b.freeTier.included }
-    ],
-    tiers: [],
-    usageRows: []
-  }
 }
 
 function refusalNotice(refusal: BillingRefusal, b: Translations['settings']['billing']): BillingNoticeView {
