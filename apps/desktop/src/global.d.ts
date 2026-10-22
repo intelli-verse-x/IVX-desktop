@@ -62,18 +62,30 @@ declare global {
           spentCents: number
           inputTokens: number
           outputTokens: number
+          lastModel?: string
+          models?: string[]
+          modelUsage?: Array<{ model: string; inputTokens: number; outputTokens: number }>
           allowed: boolean
           reason: string
         }>
         checkout: (amountUsd: 50 | 100 | 200, appId?: string) => Promise<{ url: string }>
         openUrl: (url: string) => Promise<DesktopBrandSession>
         reportUsage: (payload: {
-          inputTokens: number
-          outputTokens: number
-          costUsd: number
+          inputTokens?: number
+          outputTokens?: number
+          costUsd?: number
           model?: string
           appId?: string
-        }) => Promise<null | { allowed: boolean; reason: string }>
+          models?: Array<{ model: string; inputTokens: number; outputTokens: number }>
+        }) => Promise<null | {
+          allowed: boolean
+          reason: string
+          inputTokens?: number
+          outputTokens?: number
+          lastModel?: string
+          models?: string[]
+          modelUsage?: Array<{ model: string; inputTokens: number; outputTokens: number }>
+        }>
       }
       // Registry-scoped backend resolution: dial (connectionId, profile). An
       // empty/local connectionId delegates to the legacy getConnection path.
