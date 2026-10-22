@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react'
 
 import { $brandConnectors, emptyBrandConnectors } from '@/store/brand-connectors'
 import { $brandSession, type BrandSession } from '@/store/brand-session'
+import { refreshDesktopAccess } from '@/store/usage-mode'
 
 import { releaseBrandMcp, syncBrandMcp } from './sync-brand-mcp'
 
@@ -57,6 +58,7 @@ export function BrandGate() {
     }
 
     wasSignedIn.current = true
+    void refreshDesktopAccess().catch(() => undefined)
 
     let cancelled = false
 

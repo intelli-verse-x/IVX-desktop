@@ -6,20 +6,12 @@ import { Input } from '@/components/ui/input'
 import { Progress } from '@/components/ui/progress'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Skeleton } from '@/components/ui/skeleton'
 import { useI18n } from '@/i18n'
 import { BarChart3, CreditCard, ExternalLink, Package, Wrench } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 
 import { useRouteEnumParam } from '../../hooks/use-route-enum-param'
-import {
-  ListRow,
-  ListRowSkeleton,
-  SectionHeading,
-  SectionHeadingSkeleton,
-  SettingsContent,
-  SettingsSection
-} from '../primitives'
+import { ListRow, SectionHeading, SettingsContent, SettingsSection } from '../primitives'
 
 import { RowValue } from './account-row-value'
 import { BillingApiProvider } from './api'
@@ -56,22 +48,6 @@ const BILLING_DEV_FIXTURE_NAMES = import.meta.env.DEV
   : []
 
 type BillingFixtureSelection = 'live' | BillingDevFixtureName
-
-function SummaryCard({ label, value, tone }: { label: string; tone?: 'muted' | 'primary'; value: string }) {
-  return (
-    <div className="min-w-0">
-      <div className="text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">{label}</div>
-      <div
-        className={cn(
-          'mt-1 min-w-0 truncate text-lg font-semibold tabular-nums',
-          tone === 'primary' ? 'text-(--ui-green)' : tone === 'muted' ? 'text-(--ui-text-tertiary)' : 'text-foreground'
-        )}
-      >
-        {value}
-      </div>
-    </div>
-  )
-}
 
 function NoticeCard({ notice }: { notice: BillingNoticeView }) {
   const warn = notice.tone === 'warn'
@@ -442,34 +418,6 @@ function BillingHeader({
   )
 }
 
-// Loading shape for the billing overview: three summary cards over the Plan /
-// Payment & credits / Usage sections. Rendered under the real header.
-function BillingSkeleton() {
-  return (
-    <>
-      <div className="@container mb-6">
-        <div className="grid gap-3 @2xl:grid-cols-3">
-          {[0, 1, 2].map(i => (
-            <div className="min-w-0 space-y-2" key={i}>
-              <Skeleton className="h-3 w-24" />
-              <Skeleton className="h-6 w-20" />
-            </div>
-          ))}
-        </div>
-      </div>
-      {[0, 1, 2].map(section => (
-        <section className="mb-6" key={section}>
-          <SectionHeadingSkeleton />
-          <div className="grid gap-1">
-            <ListRowSkeleton />
-            <ListRowSkeleton />
-          </div>
-        </section>
-      ))}
-    </>
-  )
-}
-
 function BillingSettingsContent({
   fixtureName,
   onFixtureChange
@@ -493,7 +441,7 @@ function BillingSettingsContent({
     return (
       <SettingsContent>
         <BillingHeader fixtureName={fixtureName} onFixtureChange={onFixtureChange} />
-        <BillingSkeleton />
+        <TokenUsage />
       </SettingsContent>
     )
   }
@@ -530,13 +478,7 @@ function BillingSettingsContent({
 
       {view.notice && <NoticeCard notice={view.notice} />}
 
-      <div className="@container mb-6">
-        <div className="grid gap-3 @2xl:grid-cols-3">
-          {view.summary.map(item => (
-            <SummaryCard key={item.label} label={item.label} tone={item.tone} value={item.value} />
-          ))}
-        </div>
-      </div>
+      <TokenUsage />
 
       {view.plan && (
         <SettingsSection icon={Package} title={b.sections.plan}>
@@ -570,8 +512,6 @@ function BillingSettingsContent({
           </div>
         </SettingsSection>
       )}
-
-      <TokenUsage />
 
       {
         // no endpoint yet — NAS capability-board gap

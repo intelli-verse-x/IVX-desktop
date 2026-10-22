@@ -4,106 +4,137 @@ import { useEffect, useState } from 'react'
 
 import { useI18n } from '@/i18n'
 import { Activity } from '@/lib/icons'
-import { $activeConnectionId } from '@/store/connections'
-import { requestGatewayForAgent } from '@/store/gateway'
-import { $gatewayState } from '@/store/session'
-import { $settingsScopeProfile } from '@/store/settings-scope'
+import { $brandSession } from '@/store/brand-session'
 
 import { ListRow, SettingsSection } from '../primitives'
 
-interface UsageModelTotal {
+interface ModelUsageRow {
+  inputTokens: number
   model: string
-  total_tokens: number
-  cost_usd: number
+  outputTokens: number
 }
 
-interface UsageSummary {
-  input_tokens: number
-  output_tokens: number
-  cache_read_tokens: number
-  cache_write_tokens: number
-  reasoning_tokens: number
-  total_tokens: number
-  cost_usd: number
-  chat_count: number
-  models: UsageModelTotal[]
+interface DesktopUsageView {
+  creditCents: number
+  email: string
+  inputTokens: number
+  modelUsage: ModelUsageRow[]
+  outputTokens: number
 }
 
-function formatCost(amount: number): string {
-  return `$${amount.toFixed(2)}`
+function dollars(cents: number): string {
+  return `$${(Math.max(0, cents) / 100).toFixed(2)}`
 }
 
-/** Gateway token usage (moved from Account into Billing). */
+/** Official token usage from the admin Desktop access API (same DB as the portal). */
 export function TokenUsage() {
   const { t } = useI18n()
   const copy = t.settings.account
-  const gatewayState = useStore($gatewayState)
-  const connectionId = useStore($activeConnectionId)
-  const scopeProfile = useStore($settingsScopeProfile)
-  const [summary, setSummary] = useState<UsageSummary | null>(null)
+  const brand = useStore($brandSession)
+  const [view, setView] = useState<DesktopUsageView | null>(null)
   const [failed, setFailed] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (gatewayState !== 'open') {
+    if (!brand.signedIn) {
+      setView(null)
+      setFailed(false)
+      setLoading(false)
+
+      return
+    }
+
+    const api = window.hermesDesktop?.desktopAccess
+    if (!api?.status) {
+      setFailed(true)
+      setView(null)
+
       return
     }
 
     let cancelled = false
+    setLoading(true)
     setFailed(false)
 
-    void requestGatewayForAgent<UsageSummary>(
-      connectionId,
-      scopeProfile,
-      'usage.summary',
-      scopeProfile ? { profile: scopeProfile } : {},
-      undefined,
-      undefined,
-      { spawnPriority: 'foreground' }
-    )
-      .then(next => {
-        if (!cancelled) {
-          setSummary(next)
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setFailed(true)
-        }
-      })
+    const load = () => {
+      void api
+        .status(brand.activeAppId)
+        .then(next => {
+          if (cancelled) {
+            return
+          }
+
+          if (!next) {
+            setView(null)
+            setFailed(true)
+
+            return
+          }
+
+          const modelUsage = Array.isArray(next.modelUsage)
+            ? next.modelUsage
+                .map(row => ({
+                  model: String(row?.model || '').trim(),
+                  inputTokens: Number(row?.inputTokens) || 0,
+                  outputTokens: Number(row?.outputTokens) || 0
+                }))
+                .filter(row => row.model && row.inputTokens + row.outputTokens > 0)
+            : []
+
+          setView({
+            email: next.email,
+            creditCents: Number(next.creditCents) || 0,
+            inputTokens: Number(next.inputTokens) || 0,
+            outputTokens: Number(next.outputTokens) || 0,
+            modelUsage
+          })
+          setFailed(false)
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setFailed(true)
+            setView(null)
+          }
+        })
+        .finally(() => {
+          if (!cancelled) {
+            setLoading(false)
+          }
+        })
+    }
+
+    load()
+    const timer = window.setInterval(load, 15_000)
 
     return () => {
       cancelled = true
+      window.clearInterval(timer)
     }
-  }, [connectionId, gatewayState, scopeProfile])
+  }, [brand.activeAppId, brand.signedIn])
 
-  const cache = (summary?.cache_read_tokens ?? 0) + (summary?.cache_write_tokens ?? 0)
+  const total = (view?.inputTokens || 0) + (view?.outputTokens || 0)
 
   return (
     <SettingsSection icon={Activity} title={copy.limitsTitle}>
-      <p className="mb-2 text-[length:var(--conversation-caption-font-size)] leading-(--conversation-caption-line-height) text-(--ui-text-tertiary)">
-        {copy.limitsBody}
-      </p>
-      {failed ? (
+      {!brand.signedIn ? (
+        <p className="mb-4 text-sm text-(--ui-text-tertiary)">Sign in to load token usage from the server.</p>
+      ) : failed ? (
         <p className="mb-4 text-sm text-(--ui-text-tertiary)">{copy.usageUnavailable}</p>
-      ) : summary && summary.total_tokens > 0 ? (
+      ) : loading && !view ? (
+        <p className="mb-4 text-sm text-(--ui-text-tertiary)">Loading token usage…</p>
+      ) : view && total > 0 ? (
         <>
-          <ListRow
-            action={compactNumber(summary.total_tokens)}
-            description={copy.usageChats(summary.chat_count)}
-            title={copy.usageTotal}
-          />
-          <ListRow action={compactNumber(summary.input_tokens)} title={copy.usageInput} />
-          <ListRow action={compactNumber(summary.output_tokens)} title={copy.usageOutput} />
-          <ListRow action={compactNumber(cache)} title={copy.usageCache} />
-          <ListRow action={compactNumber(summary.reasoning_tokens)} title={copy.usageReasoning} />
-          <ListRow action={formatCost(summary.cost_usd)} title={copy.usageCost} />
-          {summary.models.length > 0 ? (
+          <ListRow action={compactNumber(total)} description={view.email} title={copy.usageTotal} />
+          <ListRow action={compactNumber(view.inputTokens)} title={copy.usageInput} />
+          <ListRow action={compactNumber(view.outputTokens)} title={copy.usageOutput} />
+          <ListRow action={dollars(view.creditCents)} title="Plan credit" />
+          {view.modelUsage.length > 0 ? (
             <>
               <p className="mt-3 mb-1 text-xs font-medium text-(--ui-text-secondary)">{copy.usageModels}</p>
-              {summary.models.map(row => (
+              {view.modelUsage.map(row => (
                 <ListRow
-                  action={compactNumber(row.total_tokens)}
-                  description={formatCost(row.cost_usd)}
+                  action={compactNumber(row.inputTokens + row.outputTokens)}
+                  description={`in ${compactNumber(row.inputTokens)} · out ${compactNumber(row.outputTokens)}`}
                   key={row.model}
                   title={row.model}
                 />
@@ -112,7 +143,7 @@ export function TokenUsage() {
           ) : null}
         </>
       ) : (
-        <p className="mb-4 text-sm text-(--ui-text-tertiary)">{summary ? copy.usageEmpty : ''}</p>
+        <p className="mb-4 text-sm text-(--ui-text-tertiary)">{copy.usageEmpty}</p>
       )}
     </SettingsSection>
   )
