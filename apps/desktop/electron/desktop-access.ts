@@ -14,6 +14,9 @@ export interface DesktopAccessView {
   spentCents: number
   inputTokens: number
   outputTokens: number
+  lastModel?: string
+  models?: string[]
+  modelUsage?: Array<{ model: string; inputTokens: number; outputTokens: number }>
   allowed: boolean
   reason: string
 }
@@ -79,7 +82,13 @@ export function registerDesktopAccessIpc(): void {
 
   ipcMain.handle('hermes:desktopAccess:usage', async (_event, payload: unknown) => {
     const result = await portalJson('POST', '/api/portal/brand-control/desktop/usage', payload)
+    const data = dataOf(result.body)
 
-    return dataOf(result.body)
+    if (!result.ok || !data) {
+      console.error('[ivx desktop-access] usage report failed', result.status, result.body)
+      throw new Error('Could not report desktop token usage.')
+    }
+
+    return data
   })
 }
