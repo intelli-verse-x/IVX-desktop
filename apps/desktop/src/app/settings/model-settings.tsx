@@ -28,6 +28,8 @@ import type {
 } from '@/hermes'
 import { useI18n } from '@/i18n'
 import { isCodeSkewRestartRequired } from '@/lib/code-skew-error'
+import './model-settings.css'
+
 import { AlertTriangle, Cpu, Loader2 } from '@/lib/icons'
 import { isSubmitEnter } from '@/lib/ime'
 import { findCatalogProvider } from '@/lib/model-options'
@@ -55,17 +57,29 @@ export function ModelSettingsSkeleton({ subpage }: Pick<ModelSettingsProps, 'sub
   return (
     <div className="grid gap-6" data-slot="model-settings-skeleton">
       {(subpage === undefined || subpage === 'main') && (
-        <section>
-          <Skeleton className="mb-3 h-3 w-72 max-w-full" />
-          <div className="flex flex-wrap items-center gap-2">
-            <Skeleton className="h-8 w-40" />
-            <Skeleton className="h-8 w-60 max-w-full" />
-            <Skeleton className="h-8 w-16" />
+        <section className="grid gap-3.5">
+          <div className="space-y-2">
+            <Skeleton className="h-9 w-48" />
+            <Skeleton className="h-4 w-full max-w-xl" />
           </div>
-          <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-3">
-            <Skeleton className="h-3 w-16" />
-            <Skeleton className="h-8 w-28" />
-            <Skeleton className="h-6 w-20" />
+          <div className="rounded-[20px] border border-[#e2e8f0] bg-white p-5 shadow-[0_4px_16px_rgba(38,64,140,0.06)]">
+            <Skeleton className="mb-4 h-3 w-14" />
+            <Skeleton className="mb-4 h-12 w-full rounded-xl" />
+            <Skeleton className="mb-4 h-4 w-28" />
+            <div className="flex gap-3">
+              <Skeleton className="h-8 w-20 rounded-full" />
+              <Skeleton className="h-8 w-24 rounded-full" />
+              <Skeleton className="h-8 w-28 rounded-full" />
+            </div>
+          </div>
+          <div className="rounded-[20px] border border-[#e2e8f0] bg-white p-5 shadow-[0_4px_16px_rgba(38,64,140,0.06)]">
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0 flex-1 space-y-2">
+                <Skeleton className="h-4 w-64" />
+                <Skeleton className="h-8 w-full max-w-lg" />
+              </div>
+              <Skeleton className="h-10 w-[88px] rounded-[10px]" />
+            </div>
           </div>
         </section>
       )}
@@ -636,13 +650,20 @@ export function ModelSettings({ onMainModelChanged, scopeProfile, subpage }: Mod
 
   const fastOn = isFastTier(getNested(config ?? {}, 'agent.service_tier'))
 
+  const contextLength = Number(getNested(config ?? {}, 'model_context_length') ?? 0) || 0
+  const [contextDraft, setContextDraft] = useState(String(contextLength))
+
+  useEffect(() => {
+    setContextDraft(String(contextLength))
+  }, [contextLength])
+
   // Persist a single agent.* default as a sparse patch (PUT /api/config
   // deep-merges onto disk). Never send the whole cached record: it is a
   // default-expanded snapshot, and echoing it back rewrites every key another
   // surface changed meanwhile — a CLI-pinned auxiliary slot came back as
   // provider "auto" / model "" (#95460). Optimistic, with rollback on failure.
   const writeAgentDefault = useCallback(
-    async (key: string, value: string) => {
+    async (key: string, value: string | number) => {
       if (!config) {
         return
       }
@@ -660,6 +681,17 @@ export function ModelSettings({ onMainModelChanged, scopeProfile, subpage }: Mod
     },
     [config, m.defaultsFailed, scopeProfile, setConfig, writeScope]
   )
+
+  const commitContextLength = useCallback(() => {
+    const parsed = contextDraft.trim() === '' ? 0 : Number(contextDraft)
+    const next = Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : contextLength
+
+    setContextDraft(String(next))
+
+    if (next !== contextLength) {
+      void writeAgentDefault('model_context_length', next)
+    }
+  }, [contextDraft, contextLength, writeAgentDefault])
 
   // Paste an API key for the selected `api_key` provider, persist it, then
   // refresh so the now-authenticated provider's models populate. Auto-selects
@@ -946,11 +978,24 @@ export function ModelSettings({ onMainModelChanged, scopeProfile, subpage }: Mod
     <div className="grid gap-6">
       {!showMain && errorNotice}
       {showMain && (
-        <section>
-          <p className="mb-3 text-xs text-muted-foreground">{m.appliesDesc}</p>
-          <div className="flex flex-wrap items-center gap-2">
+        <section className="grid gap-3.5" data-model-main>
+          <header className="space-y-1.5">
+            <h1 className="text-[32px] font-extrabold leading-none tracking-tight text-[#0f172a] dark:text-foreground">
+              {t.settings.subpages.modelMain}
+            </h1>
+            <p className="text-[14px] text-[#475569]">{m.appliesDesc}</p>
+          </header>
+
+          <div className="flex flex-col gap-4 rounded-[20px] border border-[#e2e8f0] bg-white p-5 shadow-[0_4px_16px_rgba(38,64,140,0.06)] dark:border-(--ui-stroke-tertiary) dark:bg-(--ui-chat-bubble-background) dark:shadow-none">
+            <p className="text-[13px] font-semibold text-[#64748b]">{m.model}</p>
+
             <Select onValueChange={setSelectedProvider} value={selectedProviderRow?.slug ?? selectedProvider}>
-              <SelectTrigger className={cn('min-w-40', CONTROL_TEXT)}>
+              <SelectTrigger
+                className={cn(
+                  'h-12 w-full rounded-xl border-[#e2e8f0] bg-[#f7f9fc] px-4 text-[15px] font-semibold text-[#0f172a] shadow-none dark:bg-(--ui-bg-quinary)',
+                  CONTROL_TEXT
+                )}
+              >
                 <SelectValue placeholder={m.provider} />
               </SelectTrigger>
               <SelectContent>
@@ -961,9 +1006,10 @@ export function ModelSettings({ onMainModelChanged, scopeProfile, subpage }: Mod
                 ))}
               </SelectContent>
             </Select>
+
             {needsSetup ? (
               setupIsApiKey ? (
-                <>
+                <div className="flex flex-wrap items-center gap-2">
                   <Input
                     autoComplete="off"
                     className={cn('min-w-60 flex-1', CONTROL_TEXT)}
@@ -985,16 +1031,21 @@ export function ModelSettings({ onMainModelChanged, scopeProfile, subpage }: Mod
                     {activating && <Loader2 className="size-3.5 animate-spin" />}
                     {activating ? 'Activating...' : 'Activate'}
                   </Button>
-                </>
+                </div>
               ) : (
-                <Button onClick={startProviderSetup} size="sm" variant="textStrong">
+                <Button
+                  className="h-auto justify-start p-0 text-[14px] font-semibold text-[#2f5bea] hover:bg-transparent hover:text-[#1d4ed8]"
+                  onClick={startProviderSetup}
+                  size="sm"
+                  variant="ghost"
+                >
                   {m.setUpProvider(selectedProviderRow?.name ?? m.setupProviderFallback)}
                 </Button>
               )
             ) : (
-              <>
+              <div className="flex flex-wrap items-center gap-2" data-model-select-row>
                 <ModelSelect
-                  className="min-w-60"
+                  className="min-w-0 flex-1"
                   models={selectedProviderModels}
                   onValueChange={setSelectedModel}
                   provider={selectedProviderRow}
@@ -1009,64 +1060,101 @@ export function ModelSettings({ onMainModelChanged, scopeProfile, subpage }: Mod
                   {applying && <Loader2 className="size-3.5 animate-spin" />}
                   {applying ? m.applying : t.common.apply}
                 </Button>
-              </>
+              </div>
             )}
-          </div>
-          {needsSetup && !setupIsApiKey && selectedProviderRow && (
-            <p className="mt-2 text-xs text-muted-foreground">
-              {selectedProviderRow?.auth_type === 'api_key'
-                ? `${selectedProviderRow?.name} needs an API key — set it up to choose a model.`
-                : `${selectedProviderRow?.name} signs in through your browser — Hermes runs the flow for you.`}
-            </p>
-          )}
-          {config && mainModel && (reasoningSupported || fastSupported) && (
-            <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-3">
-              <span className="text-xs text-muted-foreground">{m.defaultsLabel}</span>
-              {reasoningSupported && (
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="shrink-0 whitespace-nowrap">{m.reasoning}</span>
-                  <Select
-                    onValueChange={value => void writeAgentDefault('agent.reasoning_effort', value)}
-                    value={effortValue}
-                  >
-                    <SelectTrigger className={cn('min-w-28', CONTROL_TEXT)}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {REASONING_EFFORT_VALUES.map(value => (
-                        <SelectItem key={value} value={value}>
-                          {value === 'none' ? m.reasoningOff : t.shell.modelOptions[value]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              {fastSupported && (
-                <label className="flex items-center gap-2 text-xs">
-                  {t.shell.modelOptions.fast}
-                  <Switch
-                    checked={fastOn}
-                    onCheckedChange={checked =>
-                      void writeAgentDefault('agent.service_tier', checked ? 'fast' : 'normal')
-                    }
-                    size="xs"
-                  />
-                </label>
-              )}
-            </div>
-          )}
-          {errorNotice}
-          {switchStaleAux.length > 0 && (
-            <div className="mt-2">
+
+            {needsSetup && !setupIsApiKey && selectedProviderRow ? (
+              <p className="text-[13px] text-[#64748b]">
+                {selectedProviderRow?.auth_type === 'api_key'
+                  ? `${selectedProviderRow?.name} needs an API key — set it up to choose a model.`
+                  : `${selectedProviderRow?.name} signs in through your browser — Hermes runs the flow for you.`}
+              </p>
+            ) : null}
+
+            {config && mainModel && (reasoningSupported || fastSupported) ? (
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="rounded-full border border-[#9db7f0] bg-[#e3ecfd] px-3.5 py-2 text-[13px] font-semibold text-[#2f5bea]">
+                  {m.defaultsLabel}
+                </span>
+                {reasoningSupported ? (
+                  <div className="flex items-center">
+                    <span className="rounded-full bg-white px-3.5 py-2 text-[13px] font-semibold text-[#0f172a] dark:bg-transparent dark:text-foreground">
+                      {m.reasoning}
+                    </span>
+                    <Select
+                      onValueChange={value => void writeAgentDefault('agent.reasoning_effort', value)}
+                      value={effortValue}
+                    >
+                      <SelectTrigger
+                        className={cn(
+                          'h-auto min-w-[6.5rem] rounded-full border-[#e2e8f0] bg-white py-2 pl-3.5 pr-3 text-[13px] font-semibold text-[#0f172a] shadow-none dark:bg-(--ui-bg-quinary)',
+                          CONTROL_TEXT
+                        )}
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {REASONING_EFFORT_VALUES.map(value => (
+                          <SelectItem key={value} value={value}>
+                            {value === 'none' ? m.reasoningOff : t.shell.modelOptions[value]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : null}
+                {fastSupported ? (
+                  <label className="flex items-center gap-2 rounded-full border border-[#e2e8f0] bg-white px-3.5 py-2 text-[13px] font-semibold text-[#0f172a] dark:bg-(--ui-bg-quinary) dark:text-foreground">
+                    {t.shell.modelOptions.fast}
+                    <Switch
+                      checked={fastOn}
+                      className="data-[state=checked]:border-transparent data-[state=checked]:bg-[#7c3aed]"
+                      onCheckedChange={checked =>
+                        void writeAgentDefault('agent.service_tier', checked ? 'fast' : 'normal')
+                      }
+                      size="xs"
+                    />
+                  </label>
+                ) : null}
+              </div>
+            ) : null}
+
+            {errorNotice}
+            {switchStaleAux.length > 0 ? (
               <StaleAuxWarning
                 applying={applying}
                 onReset={() => void resetAuxiliaryModels()}
                 slots={switchStaleAux}
                 taskLabel={auxiliaryTaskLabel}
               />
+            ) : null}
+          </div>
+
+          <div className="flex items-center justify-between gap-4 rounded-[20px] border border-[#e2e8f0] bg-white p-5 shadow-[0_4px_16px_rgba(38,64,140,0.06)] dark:border-(--ui-stroke-tertiary) dark:bg-(--ui-chat-bubble-background) dark:shadow-none">
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <h2 className="text-[16px] font-semibold text-[#0f172a] dark:text-foreground">
+                {t.settings.fieldLabels.modelContextLength}
+              </h2>
+              <p className="max-w-3xl text-[13px] leading-snug text-[#475569]">
+                {t.settings.fieldDescriptions.modelContextLength}
+              </p>
             </div>
-          )}
+            <Input
+              aria-label={t.settings.fieldLabels.modelContextLength}
+              className="h-10 w-[88px] rounded-[10px] border-[#e2e8f0] bg-[#f7f9fc] text-center text-[15px] font-semibold text-[#0f172a] shadow-none dark:bg-(--ui-bg-quinary)"
+              inputMode="numeric"
+              min={0}
+              onBlur={commitContextLength}
+              onChange={event => setContextDraft(event.target.value)}
+              onKeyDown={event => {
+                if (isSubmitEnter(event)) {
+                  event.currentTarget.blur()
+                }
+              }}
+              type="number"
+              value={contextDraft}
+            />
+          </div>
         </section>
       )}
 

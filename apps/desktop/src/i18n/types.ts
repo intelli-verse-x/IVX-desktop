@@ -1679,8 +1679,12 @@ export interface Translations {
       autoUseMain: string
       inheritMainEffort: string
       providerDefault: string
+      fallbackTitle: string
+      fallbackDesc: string
       fallbackAdd: string
       fallbackEmpty: string
+      fallbackEmptyTitle: string
+      fallbackEmptyDesc: string
       notInCatalog: string
       moaTitle: string
       moaPreset: string

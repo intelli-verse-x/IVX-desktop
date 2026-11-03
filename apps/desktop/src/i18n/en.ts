@@ -1953,8 +1953,13 @@ export const en: Translations = {
       autoUseMain: 'auto · use main model',
       inheritMainEffort: 'inherit · main model effort',
       providerDefault: '(provider default)',
+      fallbackTitle: 'Fallback Models',
+      fallbackDesc: 'Backup provider:model entries to try if the default model fails.',
       fallbackAdd: 'Add fallback',
       fallbackEmpty: 'No fallback models — the default model is used unless it fails.',
+      fallbackEmptyTitle: 'No fallback models',
+      fallbackEmptyDesc:
+        'The default model is used unless it fails. Add backups so sessions keep running when the primary model is unavailable.',
       notInCatalog: "isn't in this provider's model list — calls may fall back to a backup.",
       moaTitle: 'Mixture of Agents',
       moaPreset: 'Preset',

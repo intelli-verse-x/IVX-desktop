@@ -2132,8 +2132,13 @@ export const esOverrides = {
       autoUseMain: 'auto · usar modelo principal',
       inheritMainEffort: 'heredar · esfuerzo del modelo principal',
       providerDefault: '(predeterminado del proveedor)',
+      fallbackTitle: 'Modelos de respaldo',
+      fallbackDesc: 'Entradas provider:model de reserva si falla el modelo predeterminado.',
       fallbackAdd: 'Añadir respaldo',
       fallbackEmpty: 'No hay modelos de respaldo; se usa el modelo predeterminado salvo que falle.',
+      fallbackEmptyTitle: 'No hay modelos de respaldo',
+      fallbackEmptyDesc:
+        'Se usa el modelo predeterminado salvo que falle. Añade respaldos para que las sesiones sigan cuando el modelo principal no esté disponible.',
       notInCatalog: 'no está en la lista de modelos de este proveedor; las llamadas pueden recurrir a un respaldo.',
       moaTitle: 'Mixture of Agents',
       moaPreset: 'Preajuste',

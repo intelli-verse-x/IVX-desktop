@@ -2138,8 +2138,13 @@ export const deOverrides = {
       autoUseMain: 'automatisch · Hauptmodell verwenden',
       inheritMainEffort: 'übernehmen · Aufwand des Hauptmodells',
       providerDefault: '(Anbietervorgabe)',
+      fallbackTitle: 'Fallback-Modelle',
+      fallbackDesc: 'Backup provider:model-Einträge, falls das Standardmodell fehlschlägt.',
       fallbackAdd: 'Fallback hinzufügen',
       fallbackEmpty: 'Keine Fallback-Modelle — es wird das Standardmodell verwendet, außer es schlägt fehl.',
+      fallbackEmptyTitle: 'Keine Fallback-Modelle',
+      fallbackEmptyDesc:
+        'Das Standardmodell wird verwendet, außer es schlägt fehl. Füge Backups hinzu, damit Sitzungen weiterlaufen, wenn das Hauptmodell nicht verfügbar ist.',
       notInCatalog:
         'ist nicht in der Modellliste dieses Anbieters enthalten — Aufrufe können auf ein Backup ausweichen.',
       moaTitle: 'Mixture of Agents',

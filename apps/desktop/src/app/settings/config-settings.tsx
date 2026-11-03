@@ -432,7 +432,19 @@ function ConfigSettingsInner({
     return <SettingsSkeleton sections={[{ rows: 6 }]} />
   }
 
-  const visibleFields = activeSectionId === 'voice' ? fields.filter(([key]) => voiceFieldVisible(key, config)) : fields
+  // Main Model owns provider/model/reasoning/context in ModelSettings (Figma cards).
+  const modelOwnedKeys = new Set(['model', 'model_context_length', 'agent.reasoning_effort', 'agent.service_tier'])
+  const visibleFields = fields.filter(([key]) => {
+    if (activeSectionId === 'voice' && !voiceFieldVisible(key, config)) {
+      return false
+    }
+
+    if (showModelSettings && (subpage === undefined || subpage === 'main') && modelOwnedKeys.has(key)) {
+      return false
+    }
+
+    return true
+  })
 
   const showEmptyState =
     visibleFields.length === 0 &&
@@ -498,6 +510,7 @@ function ConfigSettingsInner({
                     ? enumOptionsFor(key, getNested(config, key), config, elevenLabsVoiceOptions ?? undefined)
                     : enumOptionsFor(key, getNested(config, key), config)
                 }
+                layout={key === 'fallback_providers' && subpage === 'fallbacks' ? 'page' : undefined}
                 onChange={value => updateConfig(setNested(config, key, value))}
                 optionLabels={key === 'tts.elevenlabs.voice_id' ? elevenLabsVoiceLabels : undefined}
                 schema={field}

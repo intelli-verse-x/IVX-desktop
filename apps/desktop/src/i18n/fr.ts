@@ -2144,8 +2144,13 @@ export const frOverrides = {
       autoUseMain: 'auto · utiliser le modèle principal',
       inheritMainEffort: 'hériter · effort du modèle principal',
       providerDefault: '(par défaut du fournisseur)',
+      fallbackTitle: 'Modèles de secours',
+      fallbackDesc: 'Entrées provider:model de secours si le modèle par défaut échoue.',
       fallbackAdd: 'Ajouter un secours',
       fallbackEmpty: "Aucun modèle de secours — le modèle par défaut est utilisé sauf en cas d'échec.",
+      fallbackEmptyTitle: 'Aucun modèle de secours',
+      fallbackEmptyDesc:
+        "Le modèle par défaut est utilisé sauf en cas d'échec. Ajoutez des secours pour que les sessions continuent si le modèle principal est indisponible.",
       notInCatalog:
         "n'est pas dans la liste des modèles de ce fournisseur — les appels peuvent basculer sur un secours.",
       moaTitle: "Mélange d'agents",
