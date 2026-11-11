@@ -45,6 +45,7 @@ import { ListRow } from '../settings/primitives'
 import { SettingsProfileScope } from '../settings/profile-scope'
 import type { SetStatusbarItemGroup } from '../shell/statusbar-controls'
 
+import './messaging.css'
 import { PlatformAvatar } from './platform-icon'
 import { TelegramQrSetup } from './telegram-qr-setup'
 
@@ -537,8 +538,7 @@ export function MessagingView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
     <PageSearchShell
       {...props}
       onSearchChange={setQuery}
-      searchHidden={(platforms?.length ?? 0) === 0}
-      searchHints={platforms?.slice(0, 5).map(platform => t.common.tryHint(platform.name.toLowerCase()))}
+      searchHidden
       searchPlaceholder={m.search}
       searchTrailingAction={
         presentTones.length > 1 && (
@@ -555,14 +555,21 @@ export function MessagingView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
       {!platforms ? (
         <PageLoader label={m.loading} />
       ) : (
-        <div className="flex h-full min-h-0 flex-col">
+        <div className="flex h-full min-h-0 flex-col" data-messaging-page="">
           {/* Which profile's gateway this page configures (hidden for
               single-profile users). */}
           <SettingsProfileScope className="border-b border-(--ui-stroke-secondary) px-3 py-2" />
           <div className="min-h-0 flex-1">
             <MasterDetail>
-              <ListColumn>
-                <ul className="space-y-1">
+              <ListColumn
+                header={
+                  <div data-messaging-list-header="">
+                    <h1>{m.title}</h1>
+                    <p>{m.gatewayChannels}</p>
+                  </div>
+                }
+              >
+                <ul className="space-y-1 px-1 pb-2">
                   {visiblePlatforms.map(platform => (
                     <li key={platform.id}>
                       <PlatformRow
@@ -667,15 +674,17 @@ function PlatformRow({
   return (
     <button
       className={cn(
-        'row-hover flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:text-foreground',
-        active ? 'bg-(--ui-row-active-background) text-foreground' : 'text-(--ui-text-secondary)'
+        'row-hover flex w-full items-center text-left transition-colors hover:text-foreground',
+        active ? 'text-foreground' : 'text-(--ui-text-secondary)'
       )}
+      data-active={active ? 'true' : undefined}
+      data-messaging-platform-row=""
       onClick={onSelect}
       type="button"
     >
-      <PlatformAvatar platformId={platform.id} platformName={platform.name} />
+      <PlatformAvatar className="size-7" platformId={platform.id} platformName={platform.name} />
       <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
-        <span className="truncate text-[length:var(--conversation-text-font-size)] font-normal">{platform.name}</span>
+        <span className="truncate text-[14px] font-medium">{platform.name}</span>
         <span className="flex shrink-0 items-center gap-1.5">
           {/* Someone is waiting to be let in — the only way this page tells
               you so before you open the platform. */}
@@ -735,23 +744,23 @@ function PlatformDetail({
 
   return (
     <>
-      <header className="flex items-start gap-3">
-        <PlatformAvatar platformId={platform.id} platformName={platform.name} />
+      <header data-messaging-detail-header="">
+        <PlatformAvatar className="size-10 rounded-xl" platformId={platform.id} platformName={platform.name} />
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="min-w-0 truncate text-[0.9375rem] font-semibold tracking-tight">{platform.name}</h3>
+          <h3 className="min-w-0 truncate" data-messaging-detail-title="">
+            {platform.name}
+          </h3>
+          <div data-messaging-detail-badges="">
             <StatePill tone={platformStatusTone(platform)}>{stateLabel(platform.state, m)}</StatePill>
             {/* Resting states earn no pill — only actionable ones. */}
-            {!platform.configured && <SetupPill active={false}>{m.needsSetup}</SetupPill>}
+            {!platform.configured && <SetupPill tone="warn">{m.needsSetup}</SetupPill>}
             {/* The state pill already reads "gateway stopped" when that is the
                 platform's whole story; only add the hint when it is not. */}
             {!platform.gateway_running && platform.state !== 'gateway_stopped' && (
-              <SetupPill active={false}>{m.gatewayStopped}</SetupPill>
+              <SetupPill tone="muted">{m.gatewayStopped}</SetupPill>
             )}
           </div>
-          <p className="mt-1 text-[length:var(--conversation-caption-font-size)] leading-(--conversation-caption-line-height) text-(--ui-text-tertiary)">
-            {platform.description}
-          </p>
+          <p data-messaging-detail-desc="">{platform.description}</p>
           <PlatformHint platform={platform} />
         </div>
       </header>
@@ -762,9 +771,9 @@ function PlatformDetail({
           waiting — an empty-state card here would be permanent chrome on a
           page that is usually about credentials, not approvals. */}
       {pending.length > 0 && (
-        <section>
+        <section data-messaging-section="">
           <SectionTitle>{m.pendingRequests(pending.length)}</SectionTitle>
-          <div className="mt-1 grid gap-1">
+          <div className="grid gap-1" data-messaging-card="">
             {pending.map(user => {
               const busy = approving === pairingKey(user)
               const waited = typeof user.age_minutes === 'number' ? m.waitingSince(user.age_minutes) : null
@@ -794,9 +803,9 @@ function PlatformDetail({
       )}
 
       {approved.length > 0 && (
-        <section>
+        <section data-messaging-section="">
           <SectionTitle>{m.approvedUsers(approved.length)}</SectionTitle>
-          <div className="mt-1 grid gap-1">
+          <div className="grid gap-1" data-messaging-card="">
             {approved.map(user => (
               <ListRow
                 action={
@@ -819,49 +828,49 @@ function PlatformDetail({
       )}
 
       {platform.id === 'telegram' && (
-        <section>
+        <section data-messaging-section="">
           <SectionTitle>{m.telegramQr.quickSetup}</SectionTitle>
-          <div className="mt-3">
+          <div data-messaging-card="">
             <TelegramQrSetup onApplied={onTelegramApplied} platform={platform} scopeProfile={scopeProfile} />
           </div>
         </section>
       )}
 
-      <section>
+      <section data-messaging-section="">
         <SectionTitle>{m.getCredentials}</SectionTitle>
-        <p className="mt-1 text-[length:var(--conversation-caption-font-size)] leading-(--conversation-caption-line-height) text-(--ui-text-tertiary)">
-          {introCopy(platform, m)}
-        </p>
-        {platform.docs_url && (
-          <div className="mt-3">
-            <Button asChild size="sm" variant="textStrong">
-              <a
-                href={platform.docs_url}
-                onClick={event => {
-                  // Route through the validated external opener instead of
-                  // letting Electron resolve the anchor. A packaged build's
-                  // empty/relative href resolves to the app's own
-                  // index.html file path, which shell.openPath then fails to
-                  // open ("file not found"). Plugin platforms (Teams, etc.)
-                  // ship no docs_url, so this guard + handler keeps the
-                  // button from ever pointing at a local bundle path.
-                  event.preventDefault()
-                  openExternalLink(platform.docs_url)
-                }}
-                rel="noreferrer"
-                target="_blank"
-              >
-                {m.openSetupGuide}
-                <ExternalLink className="size-3.5" />
-              </a>
-            </Button>
-          </div>
-        )}
+        <div data-messaging-card="">
+          <p className="text-[14px] leading-5 text-[#64748b] dark:text-(--ui-text-tertiary)">{introCopy(platform, m)}</p>
+          {platform.docs_url && (
+            <div className="mt-3">
+              <Button asChild data-messaging-guide-link="" size="sm" variant="textStrong">
+                <a
+                  href={platform.docs_url}
+                  onClick={event => {
+                    // Route through the validated external opener instead of
+                    // letting Electron resolve the anchor. A packaged build's
+                    // empty/relative href resolves to the app's own
+                    // index.html file path, which shell.openPath then fails to
+                    // open ("file not found"). Plugin platforms (Teams, etc.)
+                    // ship no docs_url, so this guard + handler keeps the
+                    // button from ever pointing at a local bundle path.
+                    event.preventDefault()
+                    openExternalLink(platform.docs_url)
+                  }}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  {m.openSetupGuide}
+                  <ExternalLink className="size-3.5" />
+                </a>
+              </Button>
+            </div>
+          )}
+        </div>
       </section>
 
-      <section>
+      <section data-messaging-section="">
         <SectionTitle>{m.required}</SectionTitle>
-        <div className="mt-3 grid gap-1">
+        <div className="grid" data-messaging-card="">
           {requiredFields.length > 0 ? (
             requiredFields.map(field => (
               <MessagingField
@@ -874,17 +883,15 @@ function PlatformDetail({
               />
             ))
           ) : (
-            <p className="text-[length:var(--conversation-caption-font-size)] leading-(--conversation-caption-line-height) text-(--ui-text-tertiary)">
-              {m.noTokenNeeded}
-            </p>
+            <p className="text-[14px] leading-5 text-[#64748b] dark:text-(--ui-text-tertiary)">{m.noTokenNeeded}</p>
           )}
         </div>
       </section>
 
       {optionalFields.length > 0 && (
-        <section>
+        <section data-messaging-section="">
           <SectionTitle>{m.recommended}</SectionTitle>
-          <div className="mt-3 grid gap-1">
+          <div className="grid" data-messaging-card="">
             {optionalFields.map(field => (
               <MessagingField
                 edits={edits}
@@ -900,9 +907,10 @@ function PlatformDetail({
       )}
 
       {hiddenCount > 0 && (
-        <section>
+        <section data-messaging-section="">
           <button
-            className="flex w-full items-center justify-between gap-2 py-0.5 text-left text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
+            className="flex w-full items-center justify-between gap-2 px-0.5 py-0.5 text-left transition-colors hover:text-foreground"
+            data-messaging-section-title=""
             onClick={() => setShowAdvanced(value => !value)}
             type="button"
           >
@@ -910,7 +918,7 @@ function PlatformDetail({
             <DisclosureCaret open={showAdvanced} size="0.875rem" />
           </button>
           {showAdvanced && (
-            <div className="mt-3 grid gap-1">
+            <div className="grid" data-messaging-card="">
               {advancedFields.map(field => (
                 <MessagingField
                   edits={edits}
@@ -948,20 +956,19 @@ function PlatformActionBar({
 
   return (
     <>
-      <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+      <label className="flex cursor-pointer items-center gap-2.5">
         <Switch
           aria-label={platform.enabled ? m.disableAria(platform.name) : m.enableAria(platform.name)}
           checked={platform.enabled}
           disabled={saving === `enabled:${platform.id}`}
           onCheckedChange={onToggle}
-          size="xs"
         />
-        {platform.enabled ? m.enabled : m.disabled}
+        <span data-messaging-enable-label="">{platform.enabled ? m.enabled : m.disabled}</span>
       </label>
 
       <div className="ml-auto flex items-center gap-2">
         {hasEdits && <span className="text-xs text-muted-foreground">{m.unsavedChanges}</span>}
-        <Button disabled={!hasEdits || isSavingEnv} onClick={onSave} size="sm">
+        <Button data-messaging-cta="" disabled={!hasEdits || isSavingEnv} onClick={onSave} size="sm">
           <Save />
           {isSavingEnv ? m.saving : m.saveChanges}
         </Button>
@@ -972,7 +979,7 @@ function PlatformActionBar({
 
 const PLATFORM_INTRO: Record<string, string> = {
   telegram:
-    'In Telegram, talk to @BotFather, run /newbot, and copy the token it gives you. Then grab your numeric user ID from @userinfobot.',
+    'Talk to @BotFather for a bot token and @userinfobot for your user ID if you prefer manual setup.',
   discord:
     'Open the Discord Developer Portal, create an application, add a Bot, then copy its token. Invite the bot to your server with the right scopes.',
   slack:
@@ -1029,53 +1036,51 @@ function MessagingField({
   const fieldId = `messaging-field-${field.key}`
 
   return (
-    <ListRow
-      action={
-        <div className="flex w-full items-center gap-2 @2xl:w-88">
-          <Input
-            className={CREDENTIAL_CONTROL_CLASS}
-            id={fieldId}
-            onChange={event => onEdit(field.key, event.target.value)}
-            placeholder={field.is_set ? credentialPreview(field.redacted_value) || m.replaceValue : copy.placeholder}
-            type={field.is_password ? 'password' : 'text'}
-            value={edits[field.key] || ''}
-          />
-          {field.url && (
-            <Tip label={m.openDocs}>
-              <Button asChild className="size-8 shrink-0" variant="ghost">
-                <a href={field.url} rel="noreferrer" target="_blank">
-                  <ExternalLink className="size-3.5" />
-                </a>
-              </Button>
-            </Tip>
-          )}
-          {field.is_set && (
-            <Tip label={m.clearField(field.key)}>
-              <Button
-                className="size-8 shrink-0"
-                disabled={saving === `clear:${field.key}`}
-                onClick={() => onClear(field.key)}
-                variant="ghost"
-              >
-                <Trash2 className="size-3.5" />
-              </Button>
-            </Tip>
-          )}
-        </div>
-      }
-      description={copy.help}
-      title={
-        <span className="flex flex-wrap items-center gap-2">
-          <label htmlFor={fieldId}>{copy.label}</label>
-          {field.is_set && <span className="text-[0.66rem] font-medium text-primary">{m.saved}</span>}
-        </span>
-      }
-    />
+    <div data-messaging-field="">
+      <div className="flex flex-wrap items-center gap-2">
+        <label data-messaging-field-label="" htmlFor={fieldId}>
+          {copy.label}
+        </label>
+        {field.is_set && <span className="text-[0.66rem] font-medium text-primary">{m.saved}</span>}
+      </div>
+      {copy.help && <p data-messaging-field-help="">{copy.help}</p>}
+      <div className="flex w-full items-center gap-2">
+        <Input
+          className={CREDENTIAL_CONTROL_CLASS}
+          id={fieldId}
+          onChange={event => onEdit(field.key, event.target.value)}
+          placeholder={field.is_set ? credentialPreview(field.redacted_value) || m.replaceValue : copy.placeholder}
+          type={field.is_password ? 'password' : 'text'}
+          value={edits[field.key] || ''}
+        />
+        {field.url && (
+          <Tip label={m.openDocs}>
+            <Button asChild className="size-8 shrink-0" variant="ghost">
+              <a href={field.url} rel="noreferrer" target="_blank">
+                <ExternalLink className="size-3.5" />
+              </a>
+            </Button>
+          </Tip>
+        )}
+        {field.is_set && (
+          <Tip label={m.clearField(field.key)}>
+            <Button
+              className="size-8 shrink-0"
+              disabled={saving === `clear:${field.key}`}
+              onClick={() => onClear(field.key)}
+              variant="ghost"
+            >
+              <Trash2 className="size-3.5" />
+            </Button>
+          </Tip>
+        )}
+      </div>
+    </div>
   )
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <h4 className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{children}</h4>
+  return <h4 data-messaging-section-title="">{children}</h4>
 }
 
 function PlatformHint({ platform }: { platform: MessagingPlatformInfo }) {
@@ -1122,13 +1127,14 @@ function StatePill({ children, tone }: { children: string; tone: StatusTone }) {
   )
 }
 
-function SetupPill({ active, children }: { active: boolean; children: string }) {
+function SetupPill({ children, tone = 'muted' }: { children: string; tone?: 'muted' | 'warn' }) {
   return (
     <span
       className={cn(
         'inline-flex items-center rounded-full px-2 py-0.5 text-[0.66rem] font-medium',
-        PILL_TONE[active ? 'good' : 'muted']
+        tone === 'warn' ? undefined : PILL_TONE.muted
       )}
+      data-messaging-setup-pill={tone}
     >
       {children}
     </span>

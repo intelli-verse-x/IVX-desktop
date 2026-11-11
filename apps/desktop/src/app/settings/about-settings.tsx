@@ -4,11 +4,11 @@ import { type ReactElement, useEffect } from 'react'
 import { UpdateStatusCard, VersionHero } from '@/components/update-status'
 import { VersionDetails } from '@/components/version-details'
 import { useI18n } from '@/i18n'
-import { RefreshCw } from '@/lib/icons'
 import { $connection } from '@/store/session'
 import { $desktopVersion, checkBackendUpdates, refreshDesktopVersion } from '@/store/updates'
 
-import { SectionHeading, SettingsContent } from './primitives'
+import './chat-settings.css'
+import { SettingsContent } from './primitives'
 import { SETTING_IDS, settingElementId } from './settings-manifest'
 import { UninstallSection } from './uninstall-section'
 import { useSettingDeepLink } from './use-setting-deep-link'
@@ -52,17 +52,43 @@ function AppUpdatesSettings({ includeUninstall }: AppUpdatesSettingsProps): Reac
 
   return (
     <SettingsContent>
-      <VersionHero version={version} />
-      <div className="mx-auto mt-4 w-full max-w-2xl">
-        <SectionHeading icon={RefreshCw} title={t.settings.about.updates} />
-        <div className="grid gap-3" id={settingElementId(SETTING_IDS.about.updates)}>
-          <UpdateStatusCard target="client" />
-          {/* Client and remote backend updates are independent. Only the client has release notes. */}
-          {remote && <UpdateStatusCard showReleaseNotes={false} target="backend" />}
+      <section className="grid gap-3.5" data-about-updates="">
+        <header className="space-y-1.5">
+          <h1 className="text-[32px] font-extrabold leading-none tracking-tight text-[#0f172a] dark:text-foreground">
+            {t.settings.subpages.appUpdates}
+          </h1>
+          <p className="max-w-3xl text-[14px] text-[#64748b] dark:text-(--ui-text-tertiary)">
+            {t.settings.about.updatesPageDesc}
+          </p>
+        </header>
+
+        <div data-about-hero="">
+          <VersionHero version={version} />
         </div>
-        {version && <VersionDetails version={version} />}
+
+        <div
+          className="grid gap-0"
+          data-about-updates-card=""
+          id={settingElementId(SETTING_IDS.about.updates)}
+        >
+          <div data-about-update-status="">
+            <UpdateStatusCard target="client" />
+          </div>
+          {/* Client and remote backend updates are independent. Only the client has release notes. */}
+          {remote && (
+            <div data-about-update-status="">
+              <UpdateStatusCard showReleaseNotes={false} target="backend" />
+            </div>
+          )}
+          {version && (
+            <div data-about-version-details="">
+              <VersionDetails version={version} />
+            </div>
+          )}
+        </div>
+
         {includeUninstall && <UninstallSection />}
-      </div>
+      </section>
     </SettingsContent>
   )
 }

@@ -19,7 +19,7 @@ import { SearchField } from '@/components/ui/search-field'
 import { Tip } from '@/components/ui/tooltip'
 import { disconnectOAuthProvider, listOAuthProviders } from '@/hermes'
 import { useI18n } from '@/i18n'
-import { Check, ChevronDown, ChevronRight, KeyRound, Loader2, Terminal, Trash2 } from '@/lib/icons'
+import { Check, ChevronDown, ChevronRight, Loader2, Terminal, Trash2 } from '@/lib/icons'
 import { normalize } from '@/lib/text'
 import { cn } from '@/lib/utils'
 import { confirm } from '@/store/confirm'
@@ -29,9 +29,10 @@ import { $desktopOnboarding, startManualLocalEndpoint, startManualProviderOAuth 
 import { $settingsRequestProfile } from '@/store/settings-scope'
 import type { EnvVarInfo, OAuthProvider } from '@/types/hermes'
 
+import './chat-settings.css'
 import { isKeyVar, ProviderKeyRows } from './credential-key-ui'
 import { CustomEndpointsSettings } from './custom-endpoints-settings'
-import { SettingsCategoryHeading, useEnvCredentials } from './env-credentials'
+import { useEnvCredentials } from './env-credentials'
 import { providerGroup, providerMeta, providerPriority } from './helpers'
 import { LocalModelsSettings } from './local-models-settings'
 import { SettingsContent, SettingsSkeleton } from './primitives'
@@ -194,11 +195,12 @@ function OAuthPicker({
   const showOthers = !collapsible || showAll
 
   return (
-    <section className="mb-5 grid gap-2">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-        <SettingsCategoryHeading icon={KeyRound} title={p.connectAccount} />
+    <section className="grid gap-3.5" data-providers-accounts="">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <h2 className="text-[15px] font-semibold tracking-tight text-[#0f172a] dark:text-foreground">{p.connectAccount}</h2>
         <Button
-          className="text-[length:var(--conversation-caption-font-size)]"
+          className="text-[13px] font-medium text-[#2f5bea] dark:text-primary"
+          data-providers-api-key-link=""
           onClick={onWantApiKey}
           size="inline"
           type="button"
@@ -207,41 +209,44 @@ function OAuthPicker({
           {p.haveApiKey}
         </Button>
       </div>
-      <p className="-mt-2 mb-1 text-[length:var(--conversation-caption-font-size)] leading-(--conversation-caption-line-height) text-(--ui-text-tertiary)">
-        {p.intro}
-      </p>
-      {featured && <FeaturedProviderRow onSelect={select} provider={featured} />}
-      {/* Slot #2 — the no-account path, matching onboarding. Behind the
-          --local launch flag like every local-models surface. */}
-      {$localModelsEnabled.get() && <LocalModelsProviderRow onClick={onWantLocalModels} />}
-      {connected.length > 0 && (
-        <>
-          <GroupLabel>{p.connected}</GroupLabel>
-          {connected.map(p => (
-            <ConnectedProviderRow
-              disconnecting={disconnecting === p.id}
-              key={p.id}
-              onDisconnect={onDisconnect}
-              onSelect={select}
-              onTerminalDisconnect={onTerminalDisconnect}
-              provider={p}
-            />
-          ))}
-        </>
-      )}
-      {showOthers && (
-        <>
-          {connected.length > 0 && <GroupLabel>{p.otherProviders}</GroupLabel>}
-          {others.map(p => (
-            <ProviderRow key={p.id} onSelect={select} provider={p} />
-          ))}
-          <FireworksProviderRow onClick={onWantApiKey} />
-          <OpenRouterProviderRow onClick={onWantApiKey} />
-        </>
-      )}
+      <p className="-mt-2 max-w-3xl text-[14px] leading-5 text-[#64748b] dark:text-(--ui-text-tertiary)">{p.intro}</p>
+
+      <div className="grid gap-2.5" data-providers-accounts-cards="">
+        {featured && <FeaturedProviderRow onSelect={select} provider={featured} />}
+        {/* Slot #2 — the no-account path, matching onboarding. Behind the
+            --local launch flag like every local-models surface. */}
+        {$localModelsEnabled.get() && <LocalModelsProviderRow onClick={onWantLocalModels} />}
+        {connected.length > 0 && (
+          <>
+            <GroupLabel>{p.connected}</GroupLabel>
+            {connected.map(provider => (
+              <ConnectedProviderRow
+                disconnecting={disconnecting === provider.id}
+                key={provider.id}
+                onDisconnect={onDisconnect}
+                onSelect={select}
+                onTerminalDisconnect={onTerminalDisconnect}
+                provider={provider}
+              />
+            ))}
+          </>
+        )}
+        {showOthers && (
+          <>
+            {connected.length > 0 && <GroupLabel>{p.otherProviders}</GroupLabel>}
+            {others.map(provider => (
+              <ProviderRow key={provider.id} onSelect={select} provider={provider} />
+            ))}
+            <FireworksProviderRow onClick={onWantApiKey} />
+            <OpenRouterProviderRow onClick={onWantApiKey} />
+          </>
+        )}
+      </div>
+
       {collapsible && (
         <Button
-          className="py-1 text-[length:var(--conversation-caption-font-size)]"
+          className="justify-start gap-1 py-1 text-[13px] font-medium text-[#2f5bea] dark:text-primary"
+          data-providers-other=""
           onClick={() => setShowAll(v => !v)}
           size="inline"
           type="button"
@@ -281,9 +286,9 @@ function ConnectedProviderRow({
   const showHint = !canDisconnect && !terminalDisconnect
 
   return (
-    <div className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1 rounded-[6px] transition-colors hover:bg-(--ui-control-hover-background)">
+    <div className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1 rounded-[16px] border border-[#e2e8f0] bg-white transition-colors hover:bg-[#f8fafc] dark:border-(--ui-stroke-tertiary) dark:bg-(--ui-chat-bubble-background) dark:hover:bg-(--ui-bg-quinary)">
       <RowButton
-        className="min-w-0 px-3 py-2.5 text-left"
+        className="min-w-0 px-4 py-3.5 text-left"
         onClick={() => (terminalDisconnect ? onTerminalDisconnect(provider) : onSelect(provider))}
       >
         <div className="flex min-w-0 items-center gap-2">
@@ -370,14 +375,13 @@ function LocalEndpointRow({ onOpen }: { onOpen: (reason: null | string) => void 
 
   return (
     <RowButton
-      className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1 rounded-[6px] px-3 py-2.5 text-left transition-colors hover:bg-(--ui-control-hover-background)"
+      className="group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-1 px-4 py-3.5 text-left transition-colors hover:bg-[#f8fafc] dark:hover:bg-(--ui-bg-quinary)"
+      data-providers-local-endpoint-row=""
       onClick={() => onOpen(null)}
     >
       <div className="flex min-w-0 flex-col gap-0.5">
-        <span className="truncate text-[length:var(--conversation-text-font-size)] font-semibold">{copy.title}</span>
-        <span className="truncate text-[length:var(--conversation-caption-font-size)] leading-5 text-muted-foreground">
-          {copy.description}
-        </span>
+        <span className="truncate text-[15px] font-semibold text-[#0f172a] dark:text-foreground">{copy.title}</span>
+        <span className="truncate text-[13px] leading-5 text-[#64748b] dark:text-muted-foreground">{copy.description}</span>
       </div>
       <ChevronRight className="size-4 text-muted-foreground transition group-hover:text-foreground" />
     </RowButton>
@@ -554,39 +558,59 @@ export function ProvidersSettings({
     return (
       <SettingsContent>
         <SettingsProfileScope className="mb-5" />
-        <LocalEndpointRow onOpen={reason => startManualLocalEndpoint(reason, scopeProfile)} />
-        {keyGroups.length > 0 ? (
-          <div className="grid gap-3">
-            <SearchField
-              aria-label={t.settings.providers.searchKeys}
-              containerClassName="w-full"
-              onChange={setKeyQuery}
-              placeholder={t.settings.providers.searchKeys}
-              value={keyQuery}
-            />
-            {visibleGroups.length > 0 ? (
-              <div className="grid gap-2">
-                {visibleGroups.map(group => (
-                  <div className="scroll-mt-6 rounded-[6px]" id={providerKeyElementId(group.name)} key={group.name}>
-                    <ProviderKeyRows
-                      expanded={openProvider === group.name}
-                      group={group}
-                      onExpand={() => setOpenProvider(group.name)}
-                      onToggle={() => setOpenProvider(prev => (prev === group.name ? null : group.name))}
-                      rowProps={rowProps}
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="grid min-h-24 place-items-center px-4 py-6 text-center text-[length:var(--conversation-caption-font-size)] text-muted-foreground">
-                {t.settings.providers.noKeysMatch}
-              </div>
-            )}
+        <section className="grid gap-3.5" data-providers-keys="">
+          <header className="space-y-1.5">
+            <h1 className="text-[32px] font-extrabold leading-none tracking-tight text-[#0f172a] dark:text-foreground">
+              {t.settings.nav.providerApiKeys}
+            </h1>
+            <p className="max-w-3xl text-[14px] text-[#64748b] dark:text-(--ui-text-tertiary)">
+              {t.settings.providers.keysIntro}
+            </p>
+          </header>
+
+          <div data-providers-local-endpoint="">
+            <LocalEndpointRow onOpen={reason => startManualLocalEndpoint(reason, scopeProfile)} />
           </div>
-        ) : (
-          <NoProviderKeys />
-        )}
+
+          {keyGroups.length > 0 ? (
+            <div className="grid gap-3">
+              <SearchField
+                aria-label={t.settings.providers.searchKeys}
+                containerClassName="w-full"
+                onChange={setKeyQuery}
+                placeholder={t.settings.providers.searchKeys}
+                value={keyQuery}
+                variant="box"
+              />
+              {visibleGroups.length > 0 ? (
+                <div className="grid gap-0" data-providers-keys-card="">
+                  {visibleGroups.map(group => (
+                    <div
+                      className="scroll-mt-6"
+                      data-chat-settings-row=""
+                      id={providerKeyElementId(group.name)}
+                      key={group.name}
+                    >
+                      <ProviderKeyRows
+                        expanded={openProvider === group.name}
+                        group={group}
+                        onExpand={() => setOpenProvider(group.name)}
+                        onToggle={() => setOpenProvider(prev => (prev === group.name ? null : group.name))}
+                        rowProps={rowProps}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid min-h-24 place-items-center px-4 py-6 text-center text-[length:var(--conversation-caption-font-size)] text-muted-foreground">
+                  {t.settings.providers.noKeysMatch}
+                </div>
+              )}
+            </div>
+          ) : (
+            <NoProviderKeys />
+          )}
+        </section>
       </SettingsContent>
     )
   }
@@ -605,6 +629,11 @@ export function ProvidersSettings({
   return (
     <SettingsContent>
       <SettingsProfileScope className="mb-5" />
+      <header className="mb-3.5 space-y-1.5">
+        <h1 className="text-[32px] font-extrabold leading-none tracking-tight text-[#0f172a] dark:text-foreground">
+          {t.settings.nav.providerAccounts}
+        </h1>
+      </header>
       <OAuthPicker
         disconnecting={disconnecting}
         onDisconnect={provider => void handleDisconnect(provider)}

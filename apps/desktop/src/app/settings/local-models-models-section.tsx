@@ -47,6 +47,7 @@ export function LocalModelsModelsSection({
         <ListRow
           action={
             <Button
+              data-providers-cta=""
               onClick={() =>
                 document.getElementById('local-model-browse')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
               }

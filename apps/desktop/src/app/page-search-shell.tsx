@@ -30,6 +30,8 @@ interface PageSearchShellProps extends React.ComponentProps<'section'> {
   searchValue: string
   /** Hide the search field when there's nothing to search (empty dataset). */
   searchHidden?: boolean
+  /** `box` for a stroked pill (Messaging / catalogs); default underline recedes into chrome. */
+  searchVariant?: 'underline' | 'box'
   /** Right-aligned control in the header's trailing cell (e.g. a refresh button)
    *  so mouse users get a visible affordance for the refresh hotkey. */
   searchTrailingAction?: ReactNode
@@ -72,6 +74,7 @@ export function PageSearchShell({
   searchHints,
   searchValue,
   searchHidden = false,
+  searchVariant = 'underline',
   searchTrailingAction,
   leading,
   ...props
@@ -99,17 +102,18 @@ export function PageSearchShell({
         (see app-shell.tsx), so window dragging still works here.
       */}
       <div className="shrink-0">
-        {(hasTabs || !searchHidden) && (
+        {hasTabs || !searchHidden || leading || searchTrailingAction ? (
           <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-3 pb-2 pt-[calc(var(--titlebar-height)+0.5rem)]">
             <div className="flex min-w-0 items-center justify-start gap-2">
               {leading}
               {!searchHidden && (
                 <SearchField
-                  containerClassName="max-w-[45vw]"
+                  containerClassName={searchVariant === 'box' ? 'w-full max-w-sm' : 'max-w-[45vw]'}
                   hints={searchHints}
                   onChange={onSearchChange}
                   placeholder={searchPlaceholder}
                   value={searchValue}
+                  variant={searchVariant}
                 />
               )}
             </div>
@@ -122,6 +126,9 @@ export function PageSearchShell({
             )}
             <div className="flex min-w-0 items-center justify-end">{searchTrailingAction}</div>
           </div>
+        ) : (
+          // Keep window-chrome clearance when the page opts out of search/tabs.
+          <div aria-hidden className="h-[var(--titlebar-height)]" />
         )}
         {filters ? <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-3 pb-2">{filters}</div> : null}
       </div>

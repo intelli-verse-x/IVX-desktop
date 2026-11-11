@@ -1041,6 +1041,7 @@ export const en: Translations = {
     },
     account: {
       title: 'Account',
+      pageDesc: 'Sign in to sync usage, billing, and provider accounts across devices.',
       intro: 'This app is signed in as one brand. A new chat uses that brand.',
       email: 'Email',
       brand: 'Brand',
@@ -1063,7 +1064,7 @@ export const en: Translations = {
       usageUnavailable: 'Token usage is unavailable right now.',
       signOut: 'Sign out',
       signIn: 'Sign in',
-      signedOut: 'Not signed in.'
+      signedOut: 'Not signed in'
     },
     plugins: {
       title: 'Desktop plugins',
@@ -1523,9 +1524,11 @@ export const en: Translations = {
       deleteConfirm: name => `Delete ${name}?`,
       deleteFailed: 'Delete failed',
       title: 'Custom Endpoints',
+      pageDesc: 'Add OpenAI-compatible endpoints and choose how chat requests are routed.',
       deleteEndpoint: 'Delete endpoint',
       emptyDescription: 'Add an OpenAI-compatible endpoint below.',
       emptyTitle: 'No custom endpoints',
+      emptyMeta: count => `${count} endpoints`,
       namePlaceholder: 'Axet Proxy',
       contextPlaceholder: 'Auto'
     },
@@ -1535,7 +1538,8 @@ export const en: Translations = {
       driverHealth: 'Driver health'
     },
     about: {
-      updates: 'Updates'
+      updates: 'Updates',
+      updatesPageDesc: 'Check for updates and review build details for this install.'
     },
     config: {
       minimizeToTrayTitle: 'Minimize to tray',
@@ -1594,9 +1598,18 @@ export const en: Translations = {
         'Talk hands-free with chained STT → Hermes → TTS, or full-duplex GPT-Live. Recording shortcuts live under Keyboard Shortcuts.',
       voiceTranscriptionDesc:
         'Enable local or provider-backed transcription. Echo raw transcripts to chat and pick a Whisper model size.',
-      voiceSpeechDesc: 'Choose a TTS provider and voice. Optionally read assistant responses aloud automatically.'
+      voiceSpeechDesc: 'Choose a TTS provider and voice. Optionally read assistant responses aloud automatically.',
+      advancedDesktopDesc:
+        'Device-local preferences for this Desktop install — sleep, DevTools, backends, Quick Entry, and update behavior.',
+      advancedRuntimeDesc: 'Cap tool-calling turns, API retries, and service tier behavior for agent runs.',
+      advancedToolsDesc: 'Control which toolsets the agent may use and how strictly tool-use is enforced.',
+      advancedTerminalDesc:
+        'Choose where shell commands run and which container images back Docker, Singularity, Modal, and Daytona.',
+      advancedDelegationDesc: 'Configure model, provider, turn limits, and parallelism for delegated subagents.',
+      advancedOutputDesc: 'Cap terminal output, file pages, line length, and checkpoints returned to the agent.'
     },
     hudModifier: {
+      pageDesc: 'Summon the HUD from any app with a quick modifier tap. Off by default; applies only to this device.',
       title: 'Tap to summon HUD',
       description:
         'Tap and release ⌘ + Option on Mac, or Ctrl + Alt on Windows/Linux, to bring the HUD forward from any app. Off by default; applies only to this device.',
@@ -1895,7 +1908,9 @@ export const en: Translations = {
     keys: {
       loading: 'Loading API keys and credentials...',
       failedLoad: 'API keys failed to load',
-      empty: 'Nothing configured in this category yet.'
+      empty: 'Nothing configured in this category yet.',
+      toolsDesc: 'API keys and endpoints for browser, search, media, and connector tools.',
+      settingsDesc: 'Channel and access defaults for messaging connectors and integrations.'
     },
     search: {
       placeholder: 'Search all settings…',
@@ -2024,6 +2039,7 @@ export const en: Translations = {
     localModels: {
       connectionChanged: 'Local models connection changed',
       title: 'Local Models',
+      pageDesc: 'Install the local runtime and download models that run entirely on this machine.',
       runtimeTitle: 'Local runtime',
       runtimeReady: backend => `Ready · ${backend}`,
       serverRunning: 'Running',
@@ -2208,6 +2224,10 @@ export const en: Translations = {
         failedBody: reason => `The charge didn't go through (${reason}).`
       },
       title: 'Billing',
+      overviewDesc: 'Usage and plan details for this device. Sign in to sync token usage from the server.',
+      signInToLoadTitle: 'Sign in to load token usage',
+      signInToLoadDesc: 'Sign in to load token usage from the server.',
+      planCredit: 'Plan credit',
       preview: 'preview',
       summary: {
         balance: 'Balance',
@@ -2433,6 +2453,7 @@ export const en: Translations = {
       haveApiKey: 'Have an API key instead?',
       intro:
         'Sign in with a subscription — no API key to copy. IVX-Agency runs the browser sign-in for you, right here in the app.',
+      keysIntro: 'Paste provider keys or point at a local OpenAI-compatible endpoint.',
       connected: 'Connected',
       collapse: 'Collapse',
       connectAnother: 'Connect another provider',
@@ -2480,8 +2501,8 @@ export const en: Translations = {
         'New sessions start in this folder when you set one. Leave it unset so Files opens empty until you add a folder.',
       defaultDirUpdated: 'Default project directory updated — start a new chat (Ctrl/⌘+N) for it to take effect',
       defaultsTo: label => `Defaults to ${label}.`,
-      change: 'Change',
-      choose: 'Choose',
+      change: 'Change folder',
+      choose: 'Choose folder',
       clear: 'Clear',
       notSet: 'Not set',
       failedLoad: 'Could not load archived sessions',
@@ -3086,6 +3107,8 @@ export const en: Translations = {
   },
 
   messaging: {
+    title: 'Messaging',
+    gatewayChannels: 'Gateway channels.',
     search: 'Search messaging...',
     statusFilter: {
       all: 'All',

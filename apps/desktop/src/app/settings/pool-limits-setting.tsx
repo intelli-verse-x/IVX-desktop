@@ -62,57 +62,59 @@ export function PoolLimitsSetting() {
 
   return (
     <>
-      <ListRow
-        action={
-          <div className="flex items-center gap-2">
-            <Input
-              aria-label={t.settings.poolLimits.warmBotBackendsAria}
-              className="w-20"
-              inputMode="numeric"
-              max={MAX_BACKENDS_MAX}
-              min={1}
-              onBlur={commitMax}
-              onChange={event => setMaxDraft(event.target.value)}
-              onKeyDown={event => {
-                if (event.key === 'Enter') {
-                  event.currentTarget.blur()
-                }
-              }}
-              type="number"
-              value={maxDraft}
-            />
-          </div>
-        }
-        description="How many bot backends stay running for instant switching. Higher = faster switches, more memory (~60MB per backend). Applies immediately."
-        id={settingElementId(SETTING_IDS.advanced.warmBotBackends)}
-        title={t.settings.poolLimits.warmBotBackendsTitle}
-      />
-      <ListRow
-        action={
-          <div className="flex items-center gap-2">
-            <Input
-              aria-label={t.settings.poolLimits.backendIdleTimeoutAria}
-              className="w-28"
-              inputMode="numeric"
-              max={IDLE_MS_MAX}
-              min={60_000}
-              onBlur={commitIdle}
-              onChange={event => setIdleDraft(event.target.value)}
-              onKeyDown={event => {
-                if (event.key === 'Enter') {
-                  event.currentTarget.blur()
-                }
-              }}
-              type="number"
-              value={idleDraft}
-            />
-            <span className="text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">ms</span>
-          </div>
-        }
-        description="How long an unused bot backend stays warm before it is shut down. Raise this so bots you revisit every few minutes never pay a cold start."
-        id={settingElementId(SETTING_IDS.advanced.backendIdleTimeout)}
-        title={t.settings.poolLimits.backendIdleTimeoutTitle}
-      />
+      <div className="scroll-mt-6" data-chat-settings-row="" id={settingElementId(SETTING_IDS.advanced.warmBotBackends)}>
+        <ListRow
+          action={
+            <div className="flex items-center gap-2">
+              <Input
+                aria-label={t.settings.poolLimits.warmBotBackendsAria}
+                className="w-20"
+                inputMode="numeric"
+                max={MAX_BACKENDS_MAX}
+                min={1}
+                onBlur={commitMax}
+                onChange={event => setMaxDraft(event.target.value)}
+                onKeyDown={event => {
+                  if (event.key === 'Enter') {
+                    event.currentTarget.blur()
+                  }
+                }}
+                type="number"
+                value={maxDraft}
+              />
+            </div>
+          }
+          description="How many bot backends stay running for instant switching. Higher = faster switches, more memory (~60MB per backend). Applies immediately."
+          title={t.settings.poolLimits.warmBotBackendsTitle}
+        />
+      </div>
+      <div className="scroll-mt-6" data-chat-settings-row="" id={settingElementId(SETTING_IDS.advanced.backendIdleTimeout)}>
+        <ListRow
+          action={
+            <div className="flex items-center gap-2">
+              <Input
+                aria-label={t.settings.poolLimits.backendIdleTimeoutAria}
+                className="w-28"
+                inputMode="numeric"
+                max={IDLE_MS_MAX}
+                min={60_000}
+                onBlur={commitIdle}
+                onChange={event => setIdleDraft(event.target.value)}
+                onKeyDown={event => {
+                  if (event.key === 'Enter') {
+                    event.currentTarget.blur()
+                  }
+                }}
+                type="number"
+                value={idleDraft}
+              />
+              <span className="text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">ms</span>
+            </div>
+          }
+          description="How long an unused bot backend stays warm before it is shut down. Raise this so bots you revisit every few minutes never pay a cold start."
+          title={t.settings.poolLimits.backendIdleTimeoutTitle}
+        />
+      </div>
     </>
   )
 }

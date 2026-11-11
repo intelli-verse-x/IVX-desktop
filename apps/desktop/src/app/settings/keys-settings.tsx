@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useI18n } from '@/i18n'
 import { $settingsRequestProfile } from '@/store/settings-scope'
 
+import './chat-settings.css'
 import { CredentialKeyCard, credentialPlaceholder, credentialRowLabel } from './credential-key-ui'
 import { useEnvCredentials } from './env-credentials'
 import { asText } from './helpers'
@@ -81,35 +82,55 @@ export function KeysSettings({ view }: KeysSettingsProps) {
     return <SettingsSkeleton sections={[{ rows: 5 }]} />
   }
 
+  const title = view === 'tools' ? t.settings.nav.keysTools : t.settings.nav.keysSettings
+  const description = view === 'tools' ? t.settings.keys.toolsDesc : t.settings.keys.settingsDesc
+
   return (
     <SettingsContent>
       <SettingsProfileScope className="mb-5" />
-      {entries.length > 0 ? (
-        <div className="grid gap-2">
-          {entries.map(([key, info]) => {
-            const label = credentialRowLabel(key, info)
+      <section className="grid gap-3.5" data-keys-page="">
+        <header className="space-y-1.5">
+          <h1 className="text-[32px] font-extrabold leading-none tracking-tight text-[#0f172a] dark:text-foreground">
+            {title}
+          </h1>
+          <p className="max-w-3xl text-[14px] text-[#64748b] dark:text-(--ui-text-tertiary)">{description}</p>
+        </header>
 
-            return (
-              <div className="scroll-mt-6 rounded-[6px]" id={credentialElementId(key)} key={key}>
-                <CredentialKeyCard
-                  expanded={openKey === key}
-                  info={info}
-                  label={label}
-                  onExpand={() => setOpenKey(key)}
-                  onToggle={() => setOpenKey(prev => (prev === key ? null : key))}
-                  placeholder={credentialPlaceholder(key, info, label)}
-                  rowProps={rowProps}
-                  varKey={key}
-                />
-              </div>
-            )
-          })}
-        </div>
-      ) : (
-        <div className="rounded-lg border border-dashed border-(--ui-stroke-tertiary) px-4 py-8 text-center text-[length:var(--conversation-caption-font-size)] text-muted-foreground">
-          {t.settings.keys.empty}
-        </div>
-      )}
+        {entries.length > 0 ? (
+          <div data-keys-card="">
+            {entries.map(([key, info]) => {
+              const label = credentialRowLabel(key, info)
+
+              return (
+                <div
+                  className="scroll-mt-6"
+                  data-chat-settings-row=""
+                  id={credentialElementId(key)}
+                  key={key}
+                >
+                  <CredentialKeyCard
+                    expanded={openKey === key}
+                    info={info}
+                    label={label}
+                    onExpand={() => setOpenKey(key)}
+                    onToggle={() => setOpenKey(prev => (prev === key ? null : key))}
+                    placeholder={credentialPlaceholder(key, info, label)}
+                    rowProps={rowProps}
+                    varKey={key}
+                  />
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div
+            className="rounded-[20px] border border-dashed border-[#e2e8f0] px-4 py-10 text-center text-[14px] text-[#64748b] dark:border-(--ui-stroke-tertiary) dark:text-(--ui-text-tertiary)"
+            data-keys-empty=""
+          >
+            {t.settings.keys.empty}
+          </div>
+        )}
+      </section>
     </SettingsContent>
   )
 }

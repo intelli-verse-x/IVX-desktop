@@ -11,7 +11,13 @@
    Safety Approvals / Privacy & network / Checkpoints — match Figma screenshots
    Browser profile / Local & private URLs — same card theme
    Memory Persistent / Context & compression — same card theme
-   Voice conversation / Speech to text / Text to speech — same card theme */
+   Voice conversation / Speech to text / Text to speech — same card theme
+   Advanced Desktop / Agent limits / Tool access / Terminal / Subagents / Output — same card theme
+   Notifications Desktop alerts / Sounds — same card theme
+   Providers Accounts / API keys / Custom Endpoints / Local Models — Figma chrome
+   Keyboard Shortcuts Key bindings / HUD gesture — Figma chrome
+   Tools & Keys / Sessions / Account / Billing Overview — Figma chrome
+   About Version & updates — Figma 513:10339 */
 
 /* Theme page: mode toggle (Light filled blue), search, selected cards */
 [data-appearance-theme-mode] > div {
@@ -125,7 +131,35 @@
 [data-memory-context-card] ,
 [data-voice-conversation-card] ,
 [data-voice-transcription-card] ,
-[data-voice-speech-card] {
+[data-voice-speech-card] ,
+[data-advanced-desktop-card] ,
+[data-advanced-runtime-card] ,
+[data-advanced-tools-card] ,
+[data-advanced-terminal-card] ,
+[data-advanced-delegation-card] ,
+[data-advanced-output-card] ,
+[data-notifications-alerts-card] ,
+[data-notifications-sounds-card],
+[data-providers-keys-card],
+[data-providers-local-endpoint],
+[data-providers-endpoints-list],
+[data-providers-endpoints-form],
+[data-providers-local-runtime],
+[data-providers-local-hardware],
+[data-providers-local-models],
+[data-providers-local-browse],
+[data-keybinds-shortcuts-card],
+[data-keybinds-hud-card],
+[data-keys-card],
+[data-account-card],
+[data-sessions-auto-archive-card],
+[data-sessions-archived-card],
+[data-sessions-default-dir-card],
+[data-billing-token-card],
+[data-billing-plan-card],
+[data-billing-payment-card],
+[data-billing-usage-card],
+[data-about-updates-card] {
   overflow: hidden;
   border: 1px solid #e2e8f0;
   border-radius: 20px;
@@ -152,7 +186,35 @@
 :root.dark [data-memory-context-card] ,
 :root.dark [data-voice-conversation-card] ,
 :root.dark [data-voice-transcription-card] ,
-:root.dark [data-voice-speech-card] {
+:root.dark [data-voice-speech-card] ,
+:root.dark [data-advanced-desktop-card] ,
+:root.dark [data-advanced-runtime-card] ,
+:root.dark [data-advanced-tools-card] ,
+:root.dark [data-advanced-terminal-card] ,
+:root.dark [data-advanced-delegation-card] ,
+:root.dark [data-advanced-output-card] ,
+:root.dark [data-notifications-alerts-card] ,
+:root.dark [data-notifications-sounds-card],
+:root.dark [data-providers-keys-card],
+:root.dark [data-providers-local-endpoint],
+:root.dark [data-providers-endpoints-list],
+:root.dark [data-providers-endpoints-form],
+:root.dark [data-providers-local-runtime],
+:root.dark [data-providers-local-hardware],
+:root.dark [data-providers-local-models],
+:root.dark [data-providers-local-browse],
+:root.dark [data-keybinds-shortcuts-card],
+:root.dark [data-keybinds-hud-card],
+:root.dark [data-keys-card],
+:root.dark [data-account-card],
+:root.dark [data-sessions-auto-archive-card],
+:root.dark [data-sessions-archived-card],
+:root.dark [data-sessions-default-dir-card],
+:root.dark [data-billing-token-card],
+:root.dark [data-billing-plan-card],
+:root.dark [data-billing-payment-card],
+:root.dark [data-billing-usage-card],
+:root.dark [data-about-updates-card] {
   border-color: var(--ui-stroke-tertiary);
   background: var(--ui-chat-bubble-background);
   box-shadow: none;
@@ -177,7 +239,27 @@
 [data-memory-context-card] > [data-chat-settings-row] + [data-chat-settings-row]   ,
 [data-voice-conversation-card] > [data-chat-settings-row] + [data-chat-settings-row]   ,
 [data-voice-transcription-card] > [data-chat-settings-row] + [data-chat-settings-row]   ,
-[data-voice-speech-card] > [data-chat-settings-row] + [data-chat-settings-row]   {
+[data-voice-speech-card] > [data-chat-settings-row] + [data-chat-settings-row]   ,
+[data-advanced-desktop-card] > [data-chat-settings-row] + [data-chat-settings-row]   ,
+[data-advanced-runtime-card] > [data-chat-settings-row] + [data-chat-settings-row]   ,
+[data-advanced-tools-card] > [data-chat-settings-row] + [data-chat-settings-row]   ,
+[data-advanced-terminal-card] > [data-chat-settings-row] + [data-chat-settings-row]   ,
+[data-advanced-delegation-card] > [data-chat-settings-row] + [data-chat-settings-row]   ,
+[data-advanced-output-card] > [data-chat-settings-row] + [data-chat-settings-row]   ,
+[data-notifications-alerts-card] > [data-chat-settings-row] + [data-chat-settings-row]   ,
+[data-notifications-sounds-card] > [data-chat-settings-row] + [data-chat-settings-row]   ,
+[data-providers-keys-card] > [data-chat-settings-row] + [data-chat-settings-row],
+[data-providers-endpoints-list] > [data-chat-settings-row] + [data-chat-settings-row],
+[data-keybinds-hud-card] > [data-chat-settings-row] + [data-chat-settings-row],
+[data-keys-card] > [data-chat-settings-row] + [data-chat-settings-row],
+[data-account-card] > [data-chat-settings-row] + [data-chat-settings-row],
+[data-sessions-auto-archive-card] > [data-chat-settings-row] + [data-chat-settings-row],
+[data-sessions-archived-card] > [data-chat-settings-row] + [data-chat-settings-row],
+[data-sessions-default-dir-card] > [data-chat-settings-row] + [data-chat-settings-row],
+[data-billing-token-card] > [data-chat-settings-row] + [data-chat-settings-row],
+[data-billing-plan-card] [data-chat-settings-row] + [data-chat-settings-row],
+[data-billing-payment-card] [data-chat-settings-row] + [data-chat-settings-row],
+[data-billing-usage-card] [data-chat-settings-row] + [data-chat-settings-row] {
   border-top: 1px solid #e2e8f0;
 }
 
@@ -200,7 +282,27 @@
 :root.dark [data-memory-context-card] > [data-chat-settings-row] + [data-chat-settings-row]   ,
 :root.dark [data-voice-conversation-card] > [data-chat-settings-row] + [data-chat-settings-row]   ,
 :root.dark [data-voice-transcription-card] > [data-chat-settings-row] + [data-chat-settings-row]   ,
-:root.dark [data-voice-speech-card] > [data-chat-settings-row] + [data-chat-settings-row]   {
+:root.dark [data-voice-speech-card] > [data-chat-settings-row] + [data-chat-settings-row]   ,
+:root.dark [data-advanced-desktop-card] > [data-chat-settings-row] + [data-chat-settings-row]   ,
+:root.dark [data-advanced-runtime-card] > [data-chat-settings-row] + [data-chat-settings-row]   ,
+:root.dark [data-advanced-tools-card] > [data-chat-settings-row] + [data-chat-settings-row]   ,
+:root.dark [data-advanced-terminal-card] > [data-chat-settings-row] + [data-chat-settings-row]   ,
+:root.dark [data-advanced-delegation-card] > [data-chat-settings-row] + [data-chat-settings-row]   ,
+:root.dark [data-advanced-output-card] > [data-chat-settings-row] + [data-chat-settings-row]   ,
+:root.dark [data-notifications-alerts-card] > [data-chat-settings-row] + [data-chat-settings-row]   ,
+:root.dark [data-notifications-sounds-card] > [data-chat-settings-row] + [data-chat-settings-row]   ,
+:root.dark [data-providers-keys-card] > [data-chat-settings-row] + [data-chat-settings-row],
+:root.dark [data-providers-endpoints-list] > [data-chat-settings-row] + [data-chat-settings-row],
+:root.dark [data-keybinds-hud-card] > [data-chat-settings-row] + [data-chat-settings-row],
+:root.dark [data-keys-card] > [data-chat-settings-row] + [data-chat-settings-row],
+:root.dark [data-account-card] > [data-chat-settings-row] + [data-chat-settings-row],
+:root.dark [data-sessions-auto-archive-card] > [data-chat-settings-row] + [data-chat-settings-row],
+:root.dark [data-sessions-archived-card] > [data-chat-settings-row] + [data-chat-settings-row],
+:root.dark [data-sessions-default-dir-card] > [data-chat-settings-row] + [data-chat-settings-row],
+:root.dark [data-billing-token-card] > [data-chat-settings-row] + [data-chat-settings-row],
+:root.dark [data-billing-plan-card] [data-chat-settings-row] + [data-chat-settings-row],
+:root.dark [data-billing-payment-card] [data-chat-settings-row] + [data-chat-settings-row],
+:root.dark [data-billing-usage-card] [data-chat-settings-row] + [data-chat-settings-row] {
   border-top-color: var(--ui-stroke-tertiary);
 }
 
@@ -223,7 +325,25 @@
 [data-memory-context-card] [data-chat-settings-row] > * > div   ,
 [data-voice-conversation-card] [data-chat-settings-row] > * > div   ,
 [data-voice-transcription-card] [data-chat-settings-row] > * > div   ,
-[data-voice-speech-card] [data-chat-settings-row] > * > div   {
+[data-voice-speech-card] [data-chat-settings-row] > * > div   ,
+[data-advanced-desktop-card] [data-chat-settings-row] > * > div   ,
+[data-advanced-runtime-card] [data-chat-settings-row] > * > div   ,
+[data-advanced-tools-card] [data-chat-settings-row] > * > div   ,
+[data-advanced-terminal-card] [data-chat-settings-row] > * > div   ,
+[data-advanced-delegation-card] [data-chat-settings-row] > * > div   ,
+[data-advanced-output-card] [data-chat-settings-row] > * > div   ,
+[data-notifications-alerts-card] [data-chat-settings-row] > * > div   ,
+[data-notifications-sounds-card] [data-chat-settings-row] > * > div   ,
+[data-keybinds-hud-card] [data-chat-settings-row] > * > div,
+[data-keys-card] [data-chat-settings-row] > * > div,
+[data-account-card] [data-chat-settings-row] > * > div,
+[data-sessions-auto-archive-card] [data-chat-settings-row] > * > div,
+[data-sessions-archived-card] [data-chat-settings-row] > * > div,
+[data-sessions-default-dir-card] [data-chat-settings-row] > * > div,
+[data-billing-token-card] [data-chat-settings-row] > * > div,
+[data-billing-plan-card] [data-chat-settings-row] > * > div,
+[data-billing-payment-card] [data-chat-settings-row] > * > div,
+[data-billing-usage-card] [data-chat-settings-row] > * > div {
   padding-block: 1.125rem;
   padding-inline: 1.25rem;
 }
@@ -247,7 +367,15 @@
 [data-memory-context-card] [data-chat-settings-row] [class*='font-medium']   ,
 [data-voice-conversation-card] [data-chat-settings-row] [class*='font-medium']   ,
 [data-voice-transcription-card] [data-chat-settings-row] [class*='font-medium']   ,
-[data-voice-speech-card] [data-chat-settings-row] [class*='font-medium']   {
+[data-voice-speech-card] [data-chat-settings-row] [class*='font-medium']   ,
+[data-advanced-desktop-card] [data-chat-settings-row] [class*='font-medium']   ,
+[data-advanced-runtime-card] [data-chat-settings-row] [class*='font-medium']   ,
+[data-advanced-tools-card] [data-chat-settings-row] [class*='font-medium']   ,
+[data-advanced-terminal-card] [data-chat-settings-row] [class*='font-medium']   ,
+[data-advanced-delegation-card] [data-chat-settings-row] [class*='font-medium']   ,
+[data-advanced-output-card] [data-chat-settings-row] [class*='font-medium']   ,
+[data-notifications-alerts-card] [data-chat-settings-row] [class*='font-medium']   ,
+[data-notifications-sounds-card] [data-chat-settings-row] [class*='font-medium']   {
   font-size: 15px;
   font-weight: 600;
   color: #0f172a;
@@ -272,7 +400,15 @@
 :root.dark [data-memory-context-card] [data-chat-settings-row] [class*='font-medium']   ,
 :root.dark [data-voice-conversation-card] [data-chat-settings-row] [class*='font-medium']   ,
 :root.dark [data-voice-transcription-card] [data-chat-settings-row] [class*='font-medium']   ,
-:root.dark [data-voice-speech-card] [data-chat-settings-row] [class*='font-medium']   {
+:root.dark [data-voice-speech-card] [data-chat-settings-row] [class*='font-medium']   ,
+:root.dark [data-advanced-desktop-card] [data-chat-settings-row] [class*='font-medium']   ,
+:root.dark [data-advanced-runtime-card] [data-chat-settings-row] [class*='font-medium']   ,
+:root.dark [data-advanced-tools-card] [data-chat-settings-row] [class*='font-medium']   ,
+:root.dark [data-advanced-terminal-card] [data-chat-settings-row] [class*='font-medium']   ,
+:root.dark [data-advanced-delegation-card] [data-chat-settings-row] [class*='font-medium']   ,
+:root.dark [data-advanced-output-card] [data-chat-settings-row] [class*='font-medium']   ,
+:root.dark [data-notifications-alerts-card] [data-chat-settings-row] [class*='font-medium']   ,
+:root.dark [data-notifications-sounds-card] [data-chat-settings-row] [class*='font-medium']   {
   color: var(--ui-text-primary);
 }
 
@@ -295,7 +431,15 @@
 [data-memory-context-card] [data-chat-settings-row] [class*='text-(--ui-text-tertiary)']   ,
 [data-voice-conversation-card] [data-chat-settings-row] [class*='text-(--ui-text-tertiary)']   ,
 [data-voice-transcription-card] [data-chat-settings-row] [class*='text-(--ui-text-tertiary)']   ,
-[data-voice-speech-card] [data-chat-settings-row] [class*='text-(--ui-text-tertiary)']   {
+[data-voice-speech-card] [data-chat-settings-row] [class*='text-(--ui-text-tertiary)']   ,
+[data-advanced-desktop-card] [data-chat-settings-row] [class*='text-(--ui-text-tertiary)']   ,
+[data-advanced-runtime-card] [data-chat-settings-row] [class*='text-(--ui-text-tertiary)']   ,
+[data-advanced-tools-card] [data-chat-settings-row] [class*='text-(--ui-text-tertiary)']   ,
+[data-advanced-terminal-card] [data-chat-settings-row] [class*='text-(--ui-text-tertiary)']   ,
+[data-advanced-delegation-card] [data-chat-settings-row] [class*='text-(--ui-text-tertiary)']   ,
+[data-advanced-output-card] [data-chat-settings-row] [class*='text-(--ui-text-tertiary)']   ,
+[data-notifications-alerts-card] [data-chat-settings-row] [class*='text-(--ui-text-tertiary)']   ,
+[data-notifications-sounds-card] [data-chat-settings-row] [class*='text-(--ui-text-tertiary)']   {
   margin-top: 0.25rem;
   font-size: 13px;
   line-height: 1.35;
@@ -539,7 +683,17 @@
 [data-memory-context-card] [data-slot='switch'][data-state='checked']   ,
 [data-voice-conversation-card] [data-slot='switch'][data-state='checked']   ,
 [data-voice-transcription-card] [data-slot='switch'][data-state='checked']   ,
-[data-voice-speech-card] [data-slot='switch'][data-state='checked']   {
+[data-voice-speech-card] [data-slot='switch'][data-state='checked']   ,
+[data-advanced-desktop-card] [data-slot='switch'][data-state='checked']   ,
+[data-advanced-runtime-card] [data-slot='switch'][data-state='checked']   ,
+[data-advanced-tools-card] [data-slot='switch'][data-state='checked']   ,
+[data-advanced-terminal-card] [data-slot='switch'][data-state='checked']   ,
+[data-advanced-delegation-card] [data-slot='switch'][data-state='checked']   ,
+[data-advanced-output-card] [data-slot='switch'][data-state='checked']   ,
+[data-notifications-alerts-card] [data-slot='switch'][data-state='checked']   ,
+[data-notifications-sounds-card] [data-slot='switch'][data-state='checked']   ,
+[data-keybinds-hud-card] [data-slot='switch'][data-state='checked'],
+[data-sessions-auto-archive-card] [data-slot='switch'][data-state='checked'] {
   border-color: transparent;
   background: #7c3aed;
 }
@@ -561,6 +715,14 @@
 [data-voice-conversation-card] [data-slot='select-trigger'],
 [data-voice-transcription-card] [data-slot='select-trigger'],
 [data-voice-speech-card] [data-slot='select-trigger'],
+[data-advanced-desktop-card] [data-slot='select-trigger'],
+[data-advanced-runtime-card] [data-slot='select-trigger'],
+[data-advanced-tools-card] [data-slot='select-trigger'],
+[data-advanced-terminal-card] [data-slot='select-trigger'],
+[data-advanced-delegation-card] [data-slot='select-trigger'],
+[data-advanced-output-card] [data-slot='select-trigger'],
+[data-notifications-alerts-card] [data-slot='select-trigger'],
+[data-notifications-sounds-card] [data-slot='select-trigger'],
 [data-workspace-files-card] [data-slot='searchable-select-trigger'],
 [data-safety-approvals-card] [data-slot='searchable-select-trigger'],
 [data-safety-privacy-card] [data-slot='searchable-select-trigger'],
@@ -572,6 +734,14 @@
 [data-voice-conversation-card] [data-slot='searchable-select-trigger'],
 [data-voice-transcription-card] [data-slot='searchable-select-trigger'],
 [data-voice-speech-card] [data-slot='searchable-select-trigger'],
+[data-advanced-desktop-card] [data-slot='searchable-select-trigger'],
+[data-advanced-runtime-card] [data-slot='searchable-select-trigger'],
+[data-advanced-tools-card] [data-slot='searchable-select-trigger'],
+[data-advanced-terminal-card] [data-slot='searchable-select-trigger'],
+[data-advanced-delegation-card] [data-slot='searchable-select-trigger'],
+[data-advanced-output-card] [data-slot='searchable-select-trigger'],
+[data-notifications-alerts-card] [data-slot='searchable-select-trigger'],
+[data-notifications-sounds-card] [data-slot='searchable-select-trigger'],
 [data-workspace-files-card] input ,
 [data-safety-approvals-card] input ,
 [data-safety-privacy-card] input ,
@@ -582,7 +752,15 @@
 [data-memory-context-card] input   ,
 [data-voice-conversation-card] input   ,
 [data-voice-transcription-card] input   ,
-[data-voice-speech-card] input   {
+[data-voice-speech-card] input   ,
+[data-advanced-desktop-card] input   ,
+[data-advanced-runtime-card] input   ,
+[data-advanced-tools-card] input   ,
+[data-advanced-terminal-card] input   ,
+[data-advanced-delegation-card] input   ,
+[data-advanced-output-card] input   ,
+[data-notifications-alerts-card] input   ,
+[data-notifications-sounds-card] input   {
   height: 2.5rem;
   border-radius: 0.75rem;
   border-color: #e2e8f0;
@@ -611,6 +789,14 @@
 :root.dark [data-voice-conversation-card] [data-slot='select-trigger'],
 :root.dark [data-voice-transcription-card] [data-slot='select-trigger'],
 :root.dark [data-voice-speech-card] [data-slot='select-trigger'],
+:root.dark [data-advanced-desktop-card] [data-slot='select-trigger'],
+:root.dark [data-advanced-runtime-card] [data-slot='select-trigger'],
+:root.dark [data-advanced-tools-card] [data-slot='select-trigger'],
+:root.dark [data-advanced-terminal-card] [data-slot='select-trigger'],
+:root.dark [data-advanced-delegation-card] [data-slot='select-trigger'],
+:root.dark [data-advanced-output-card] [data-slot='select-trigger'],
+:root.dark [data-notifications-alerts-card] [data-slot='select-trigger'],
+:root.dark [data-notifications-sounds-card] [data-slot='select-trigger'],
 :root.dark [data-workspace-files-card] [data-slot='searchable-select-trigger'],
 :root.dark [data-safety-approvals-card] [data-slot='searchable-select-trigger'],
 :root.dark [data-safety-privacy-card] [data-slot='searchable-select-trigger'],
@@ -622,6 +808,14 @@
 :root.dark [data-voice-conversation-card] [data-slot='searchable-select-trigger'],
 :root.dark [data-voice-transcription-card] [data-slot='searchable-select-trigger'],
 :root.dark [data-voice-speech-card] [data-slot='searchable-select-trigger'],
+:root.dark [data-advanced-desktop-card] [data-slot='searchable-select-trigger'],
+:root.dark [data-advanced-runtime-card] [data-slot='searchable-select-trigger'],
+:root.dark [data-advanced-tools-card] [data-slot='searchable-select-trigger'],
+:root.dark [data-advanced-terminal-card] [data-slot='searchable-select-trigger'],
+:root.dark [data-advanced-delegation-card] [data-slot='searchable-select-trigger'],
+:root.dark [data-advanced-output-card] [data-slot='searchable-select-trigger'],
+:root.dark [data-notifications-alerts-card] [data-slot='searchable-select-trigger'],
+:root.dark [data-notifications-sounds-card] [data-slot='searchable-select-trigger'],
 :root.dark [data-workspace-files-card] input ,
 :root.dark [data-safety-approvals-card] input ,
 :root.dark [data-safety-privacy-card] input ,
@@ -632,7 +826,15 @@
 :root.dark [data-memory-context-card] input   ,
 :root.dark [data-voice-conversation-card] input   ,
 :root.dark [data-voice-transcription-card] input   ,
-:root.dark [data-voice-speech-card] input   {
+:root.dark [data-voice-speech-card] input   ,
+:root.dark [data-advanced-desktop-card] input   ,
+:root.dark [data-advanced-runtime-card] input   ,
+:root.dark [data-advanced-tools-card] input   ,
+:root.dark [data-advanced-terminal-card] input   ,
+:root.dark [data-advanced-delegation-card] input   ,
+:root.dark [data-advanced-output-card] input   ,
+:root.dark [data-notifications-alerts-card] input   ,
+:root.dark [data-notifications-sounds-card] input   {
   border-color: var(--ui-stroke-tertiary);
   background: var(--ui-bg-quinary);
   color: var(--ui-text-primary);
@@ -812,7 +1014,15 @@
 [data-memory-context-card] input[type='number'] ,
 [data-voice-conversation-card] input[type='number'] ,
 [data-voice-transcription-card] input[type='number'] ,
-[data-voice-speech-card] input[type='number'] {
+[data-voice-speech-card] input[type='number'] ,
+[data-advanced-desktop-card] input[type='number'] ,
+[data-advanced-runtime-card] input[type='number'] ,
+[data-advanced-tools-card] input[type='number'] ,
+[data-advanced-terminal-card] input[type='number'] ,
+[data-advanced-delegation-card] input[type='number'] ,
+[data-advanced-output-card] input[type='number'] ,
+[data-notifications-alerts-card] input[type='number'] ,
+[data-notifications-sounds-card] input[type='number'] {
   width: 4.5rem;
   min-width: 4.5rem;
   padding-inline: 0.5rem;
@@ -826,10 +1036,26 @@
 [data-voice-conversation-card] input[type='number']::-webkit-outer-spin-button,
 [data-voice-transcription-card] input[type='number']::-webkit-outer-spin-button,
 [data-voice-speech-card] input[type='number']::-webkit-outer-spin-button,
+[data-advanced-desktop-card] input[type='number']::-webkit-outer-spin-button,
+[data-advanced-runtime-card] input[type='number']::-webkit-outer-spin-button,
+[data-advanced-tools-card] input[type='number']::-webkit-outer-spin-button,
+[data-advanced-terminal-card] input[type='number']::-webkit-outer-spin-button,
+[data-advanced-delegation-card] input[type='number']::-webkit-outer-spin-button,
+[data-advanced-output-card] input[type='number']::-webkit-outer-spin-button,
+[data-notifications-alerts-card] input[type='number']::-webkit-outer-spin-button,
+[data-notifications-sounds-card] input[type='number']::-webkit-outer-spin-button,
 [data-memory-context-card] input[type='number']::-webkit-inner-spin-button ,
 [data-voice-conversation-card] input[type='number']::-webkit-inner-spin-button ,
 [data-voice-transcription-card] input[type='number']::-webkit-inner-spin-button ,
-[data-voice-speech-card] input[type='number']::-webkit-inner-spin-button {
+[data-voice-speech-card] input[type='number']::-webkit-inner-spin-button ,
+[data-advanced-desktop-card] input[type='number']::-webkit-inner-spin-button ,
+[data-advanced-runtime-card] input[type='number']::-webkit-inner-spin-button ,
+[data-advanced-tools-card] input[type='number']::-webkit-inner-spin-button ,
+[data-advanced-terminal-card] input[type='number']::-webkit-inner-spin-button ,
+[data-advanced-delegation-card] input[type='number']::-webkit-inner-spin-button ,
+[data-advanced-output-card] input[type='number']::-webkit-inner-spin-button ,
+[data-notifications-alerts-card] input[type='number']::-webkit-inner-spin-button ,
+[data-notifications-sounds-card] input[type='number']::-webkit-inner-spin-button {
   margin: 0;
   -webkit-appearance: none;
 }
@@ -840,10 +1066,26 @@
 [data-voice-conversation-card] [data-slot='select-trigger'],
 [data-voice-transcription-card] [data-slot='select-trigger'],
 [data-voice-speech-card] [data-slot='select-trigger'],
+[data-advanced-desktop-card] [data-slot='select-trigger'],
+[data-advanced-runtime-card] [data-slot='select-trigger'],
+[data-advanced-tools-card] [data-slot='select-trigger'],
+[data-advanced-terminal-card] [data-slot='select-trigger'],
+[data-advanced-delegation-card] [data-slot='select-trigger'],
+[data-advanced-output-card] [data-slot='select-trigger'],
+[data-notifications-alerts-card] [data-slot='select-trigger'],
+[data-notifications-sounds-card] [data-slot='select-trigger'],
 [data-memory-context-card] [data-slot='searchable-select-trigger'] ,
 [data-voice-conversation-card] [data-slot='searchable-select-trigger'] ,
 [data-voice-transcription-card] [data-slot='searchable-select-trigger'] ,
-[data-voice-speech-card] [data-slot='searchable-select-trigger'] {
+[data-voice-speech-card] [data-slot='searchable-select-trigger'] ,
+[data-advanced-desktop-card] [data-slot='searchable-select-trigger'] ,
+[data-advanced-runtime-card] [data-slot='searchable-select-trigger'] ,
+[data-advanced-tools-card] [data-slot='searchable-select-trigger'] ,
+[data-advanced-terminal-card] [data-slot='searchable-select-trigger'] ,
+[data-advanced-delegation-card] [data-slot='searchable-select-trigger'] ,
+[data-advanced-output-card] [data-slot='searchable-select-trigger'] ,
+[data-notifications-alerts-card] [data-slot='searchable-select-trigger'] ,
+[data-notifications-sounds-card] [data-slot='searchable-select-trigger'] {
   min-width: 9.5rem;
 }
 
@@ -851,7 +1093,15 @@
 /* Voice — compact number controls */
 [data-voice-conversation-card] input[type='number'],
 [data-voice-transcription-card] input[type='number'],
-[data-voice-speech-card] input[type='number'] {
+[data-voice-speech-card] input[type='number'] ,
+[data-advanced-desktop-card] input[type='number'] ,
+[data-advanced-runtime-card] input[type='number'] ,
+[data-advanced-tools-card] input[type='number'] ,
+[data-advanced-terminal-card] input[type='number'] ,
+[data-advanced-delegation-card] input[type='number'] ,
+[data-advanced-output-card] input[type='number'] ,
+[data-notifications-alerts-card] input[type='number'] ,
+[data-notifications-sounds-card] input[type='number'] {
   width: 4.5rem;
   min-width: 4.5rem;
   padding-inline: 0.5rem;
@@ -864,7 +1114,23 @@
 [data-voice-transcription-card] input[type='number']::-webkit-outer-spin-button,
 [data-voice-transcription-card] input[type='number']::-webkit-inner-spin-button,
 [data-voice-speech-card] input[type='number']::-webkit-outer-spin-button,
-[data-voice-speech-card] input[type='number']::-webkit-inner-spin-button {
+[data-advanced-desktop-card] input[type='number']::-webkit-outer-spin-button,
+[data-advanced-runtime-card] input[type='number']::-webkit-outer-spin-button,
+[data-advanced-tools-card] input[type='number']::-webkit-outer-spin-button,
+[data-advanced-terminal-card] input[type='number']::-webkit-outer-spin-button,
+[data-advanced-delegation-card] input[type='number']::-webkit-outer-spin-button,
+[data-advanced-output-card] input[type='number']::-webkit-outer-spin-button,
+[data-notifications-alerts-card] input[type='number']::-webkit-outer-spin-button,
+[data-notifications-sounds-card] input[type='number']::-webkit-outer-spin-button,
+[data-voice-speech-card] input[type='number']::-webkit-inner-spin-button ,
+[data-advanced-desktop-card] input[type='number']::-webkit-inner-spin-button ,
+[data-advanced-runtime-card] input[type='number']::-webkit-inner-spin-button ,
+[data-advanced-tools-card] input[type='number']::-webkit-inner-spin-button ,
+[data-advanced-terminal-card] input[type='number']::-webkit-inner-spin-button ,
+[data-advanced-delegation-card] input[type='number']::-webkit-inner-spin-button ,
+[data-advanced-output-card] input[type='number']::-webkit-inner-spin-button ,
+[data-notifications-alerts-card] input[type='number']::-webkit-inner-spin-button ,
+[data-notifications-sounds-card] input[type='number']::-webkit-inner-spin-button {
   margin: 0;
   -webkit-appearance: none;
 }
@@ -874,6 +1140,481 @@
 [data-voice-transcription-card] [data-slot='select-trigger'],
 [data-voice-transcription-card] [data-slot='searchable-select-trigger'],
 [data-voice-speech-card] [data-slot='select-trigger'],
-[data-voice-speech-card] [data-slot='searchable-select-trigger'] {
+[data-advanced-desktop-card] [data-slot='select-trigger'],
+[data-advanced-runtime-card] [data-slot='select-trigger'],
+[data-advanced-tools-card] [data-slot='select-trigger'],
+[data-advanced-terminal-card] [data-slot='select-trigger'],
+[data-advanced-delegation-card] [data-slot='select-trigger'],
+[data-advanced-output-card] [data-slot='select-trigger'],
+[data-notifications-alerts-card] [data-slot='select-trigger'],
+[data-notifications-sounds-card] [data-slot='select-trigger'],
+[data-voice-speech-card] [data-slot='searchable-select-trigger'] ,
+[data-advanced-desktop-card] [data-slot='searchable-select-trigger'] ,
+[data-advanced-runtime-card] [data-slot='searchable-select-trigger'] ,
+[data-advanced-tools-card] [data-slot='searchable-select-trigger'] ,
+[data-advanced-terminal-card] [data-slot='searchable-select-trigger'] ,
+[data-advanced-delegation-card] [data-slot='searchable-select-trigger'] ,
+[data-advanced-output-card] [data-slot='searchable-select-trigger'] ,
+[data-notifications-alerts-card] [data-slot='searchable-select-trigger'] ,
+[data-notifications-sounds-card] [data-slot='searchable-select-trigger'] {
   min-width: 9.5rem;
+}
+
+
+/* Advanced — compact number / select controls */
+[data-advanced-desktop-card] input[type='number'],
+[data-advanced-runtime-card] input[type='number'],
+[data-advanced-tools-card] input[type='number'],
+[data-advanced-terminal-card] input[type='number'],
+[data-advanced-delegation-card] input[type='number'],
+[data-advanced-output-card] input[type='number'] ,
+[data-notifications-alerts-card] input[type='number'] ,
+[data-notifications-sounds-card] input[type='number'] {
+  width: 5.5rem;
+  min-width: 5.5rem;
+  padding-inline: 0.5rem;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+[data-advanced-desktop-card] input[type='number']::-webkit-outer-spin-button,
+[data-advanced-desktop-card] input[type='number']::-webkit-inner-spin-button,
+[data-advanced-runtime-card] input[type='number']::-webkit-outer-spin-button,
+[data-advanced-runtime-card] input[type='number']::-webkit-inner-spin-button,
+[data-advanced-tools-card] input[type='number']::-webkit-outer-spin-button,
+[data-advanced-tools-card] input[type='number']::-webkit-inner-spin-button,
+[data-advanced-terminal-card] input[type='number']::-webkit-outer-spin-button,
+[data-advanced-terminal-card] input[type='number']::-webkit-inner-spin-button,
+[data-advanced-delegation-card] input[type='number']::-webkit-outer-spin-button,
+[data-advanced-delegation-card] input[type='number']::-webkit-inner-spin-button,
+[data-advanced-output-card] input[type='number']::-webkit-outer-spin-button,
+[data-notifications-alerts-card] input[type='number']::-webkit-outer-spin-button,
+[data-notifications-sounds-card] input[type='number']::-webkit-outer-spin-button,
+[data-advanced-output-card] input[type='number']::-webkit-inner-spin-button ,
+[data-notifications-alerts-card] input[type='number']::-webkit-inner-spin-button ,
+[data-notifications-sounds-card] input[type='number']::-webkit-inner-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+[data-advanced-desktop-card] [data-slot='select-trigger'],
+[data-advanced-runtime-card] [data-slot='select-trigger'],
+[data-advanced-tools-card] [data-slot='select-trigger'],
+[data-advanced-terminal-card] [data-slot='select-trigger'],
+[data-advanced-delegation-card] [data-slot='select-trigger'],
+[data-advanced-output-card] [data-slot='select-trigger'] ,
+[data-notifications-alerts-card] [data-slot='select-trigger'] ,
+[data-notifications-sounds-card] [data-slot='select-trigger'] {
+  min-width: 9.5rem;
+}
+
+/* Wider text fields for toolsets / image names */
+[data-advanced-tools-card] [id='setting-field-toolsets'] input,
+[data-advanced-terminal-card] input:not([type='number']),
+[data-advanced-delegation-card] input:not([type='number']) {
+  width: 16rem;
+  min-width: 12rem;
+  max-width: 20rem;
+  text-align: left;
+}
+
+
+/* Notifications — Desktop alerts / Sounds */
+[data-notifications-alerts] [data-notifications-test],
+[data-notifications-sounds-card] button[data-slot='button'] {
+  height: 2.25rem;
+  border-color: #e2e8f0;
+  border-radius: 0.625rem;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  box-shadow: none;
+}
+
+[data-notifications-sounds-card] [data-slot='select-trigger'] {
+  min-width: 14rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  border-color: #e2e8f0;
+  background: #f7f9fc;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  box-shadow: none;
+}
+
+:root.dark [data-notifications-alerts] [data-notifications-test],
+:root.dark [data-notifications-sounds-card] button[data-slot='button'] {
+  border-color: var(--ui-stroke-tertiary);
+  background: var(--ui-bg-quinary);
+  color: var(--ui-text-primary);
+}
+
+:root.dark [data-notifications-sounds-card] [data-slot='select-trigger'] {
+  border-color: var(--ui-stroke-tertiary);
+  background: var(--ui-bg-quinary);
+  color: var(--ui-text-primary);
+}
+
+/* Providers — Accounts / API keys / Custom Endpoints / Local Models */
+[data-providers-featured] {
+  border: 1px solid #9db7f0;
+  background: #eef3fc;
+  box-shadow: none;
+}
+
+[data-providers-featured]:hover {
+  background: #e3ecfd;
+}
+
+:root.dark [data-providers-featured] {
+  border-color: color-mix(in srgb, #2f5bea 45%, transparent);
+  background: color-mix(in srgb, #2f5bea 14%, transparent);
+}
+
+[data-providers-other],
+[data-providers-api-key-link],
+[data-providers-add-endpoint] {
+  color: #2f5bea !important;
+}
+
+:root.dark [data-providers-other],
+:root.dark [data-providers-api-key-link],
+:root.dark [data-providers-add-endpoint] {
+  color: var(--ui-text-link, #8ab4ff) !important;
+}
+
+[data-providers-keys-card] > [data-chat-settings-row] > * {
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+[data-providers-keys-card] input,
+[data-providers-endpoints-form] input,
+[data-providers-endpoints-form] [data-slot='combobox-input'],
+[data-providers-keys] [data-slot='search-field'],
+[data-providers-keys] input {
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  border-color: #e2e8f0;
+  background: #f7f9fc;
+  box-shadow: none;
+}
+
+:root.dark [data-providers-keys-card] input,
+:root.dark [data-providers-endpoints-form] input,
+:root.dark [data-providers-keys] input {
+  border-color: var(--ui-stroke-tertiary);
+  background: var(--ui-bg-quinary);
+}
+
+[data-providers-endpoints-list][data-empty] {
+  border-style: dashed;
+  background: #fafbfd;
+}
+
+:root.dark [data-providers-endpoints-list][data-empty] {
+  background: transparent;
+}
+
+[data-providers-endpoints-form],
+[data-providers-local-runtime],
+[data-providers-local-hardware],
+[data-providers-local-models],
+[data-providers-local-browse] {
+  padding: 1rem 1.125rem 1.125rem;
+}
+
+[data-providers-local-runtime] > section,
+[data-providers-local-hardware] > section,
+[data-providers-local-models] > section,
+[data-providers-local-browse] > section {
+  margin-bottom: 0;
+}
+
+[data-providers-local-runtime] [data-slot='section-heading'] svg,
+[data-providers-local-hardware] [data-slot='section-heading'] svg,
+[data-providers-local-models] [data-slot='section-heading'] svg {
+  color: #64748b;
+}
+
+[data-providers-cta],
+[data-providers-endpoints] [data-providers-cta] {
+  height: 2.25rem;
+  border: none !important;
+  border-radius: 0.625rem;
+  background: linear-gradient(90deg, #8b5cf6 0%, #3b82f6 100%) !important;
+  color: #fff !important;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: none !important;
+}
+
+[data-providers-cta]:hover,
+[data-providers-endpoints] [data-providers-cta]:hover {
+  filter: brightness(1.05);
+}
+
+[data-providers-endpoints] [data-slot='checkbox'][data-state='checked'],
+[data-providers-endpoints] button[role='checkbox'][data-state='checked'] {
+  background: #7c3aed;
+  border-color: #7c3aed;
+}
+
+[data-providers-local-models] button[data-slot='button'][class*='outline'],
+[data-providers-local-models] button.variant-outline {
+  border-color: #e2e8f0;
+  border-radius: 0.625rem;
+  background: #fff;
+  color: #0f172a;
+}
+
+:root.dark [data-providers-local-models] button[data-slot='button'][class*='outline'] {
+  border-color: var(--ui-stroke-tertiary);
+  background: var(--ui-bg-quinary);
+  color: var(--ui-text-primary);
+}
+
+/* Keyboard Shortcuts — Key bindings / HUD gesture */
+[data-keybinds-shortcuts-card] [data-keybinds-row] + [data-keybinds-row],
+[data-keybinds-shortcuts-card] [data-keybinds-category] + [data-keybinds-category] [data-keybinds-row]:first-of-type {
+  border-top: 1px solid #e2e8f0;
+}
+
+:root.dark [data-keybinds-shortcuts-card] [data-keybinds-row] + [data-keybinds-row],
+:root.dark
+  [data-keybinds-shortcuts-card]
+  [data-keybinds-category]
+  + [data-keybinds-category]
+  [data-keybinds-row]:first-of-type {
+  border-top-color: var(--ui-stroke-tertiary);
+}
+
+[data-keybinds-shortcuts-card] [data-keybinds-category] + [data-keybinds-category] {
+  border-top: 1px solid #e2e8f0;
+}
+
+:root.dark [data-keybinds-shortcuts-card] [data-keybinds-category] + [data-keybinds-category] {
+  border-top-color: var(--ui-stroke-tertiary);
+}
+
+[data-keybinds-shortcuts] [data-keybinds-reset-all] {
+  height: 2.5rem;
+  border-color: #e2e8f0;
+  border-radius: 0.75rem;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  box-shadow: none;
+}
+
+:root.dark [data-keybinds-shortcuts] [data-keybinds-reset-all] {
+  border-color: var(--ui-stroke-tertiary);
+  background: var(--ui-bg-quinary);
+  color: var(--ui-text-primary);
+}
+
+[data-keybinds-hud-card] [data-chat-settings-row] [class*='font-medium'] {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+:root.dark [data-keybinds-hud-card] [data-chat-settings-row] [class*='font-medium'] {
+  color: var(--ui-text-primary);
+}
+
+[data-keybinds-hud-card] [data-chat-settings-row] [class*='text-(--ui-text-tertiary)'] {
+  font-size: 13px;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+/* Tools & Keys / Sessions / Account / Billing */
+[data-keys-card] > [data-chat-settings-row] > * {
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+[data-keys-card] input {
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  border-color: #e2e8f0;
+  background: #f7f9fc;
+  box-shadow: none;
+}
+
+:root.dark [data-keys-card] input {
+  border-color: var(--ui-stroke-tertiary);
+  background: var(--ui-bg-quinary);
+}
+
+[data-sessions-archived-card][data-empty],
+[data-billing-token-card][data-empty] {
+  border-style: dashed;
+  background: #fafbfd;
+}
+
+:root.dark [data-sessions-archived-card][data-empty],
+:root.dark [data-billing-token-card][data-empty] {
+  background: transparent;
+}
+
+[data-billing-plan-card] > section,
+[data-billing-payment-card] > section,
+[data-billing-usage-card] > section {
+  margin-bottom: 0;
+  padding: 1rem 0.25rem 0.25rem;
+}
+
+[data-account-cta],
+[data-billing-cta] {
+  height: 2.25rem;
+  border: none !important;
+  border-radius: 0.625rem;
+  background: linear-gradient(90deg, #8b5cf6 0%, #3b82f6 100%) !important;
+  color: #fff !important;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: none !important;
+}
+
+[data-account-cta]:hover,
+[data-billing-cta]:hover {
+  filter: brightness(1.05);
+}
+
+[data-sessions-choose] {
+  height: 2.25rem;
+  border-color: #e2e8f0;
+  border-radius: 0.625rem;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  box-shadow: none;
+}
+
+:root.dark [data-sessions-choose] {
+  border-color: var(--ui-stroke-tertiary);
+  background: var(--ui-bg-quinary);
+  color: var(--ui-text-primary);
+}
+
+[data-billing-token-card] [data-chat-settings-row] [class*='font-medium'],
+[data-sessions-default-dir-card] [data-chat-settings-row] [class*='font-medium'],
+[data-sessions-auto-archive-card] [data-chat-settings-row] [class*='font-medium'] {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+:root.dark [data-billing-token-card] [data-chat-settings-row] [class*='font-medium'],
+:root.dark [data-sessions-default-dir-card] [data-chat-settings-row] [class*='font-medium'],
+:root.dark [data-sessions-auto-archive-card] [data-chat-settings-row] [class*='font-medium'] {
+  color: var(--ui-text-primary);
+}
+
+/* About — Version & updates (Figma 513:10339) */
+[data-about-updates-card] {
+  padding: 1rem 1.125rem 0.5rem;
+}
+
+[data-about-updates-card] [data-update-status-card] {
+  border: none;
+  border-radius: 0.75rem;
+  background: transparent;
+  padding: 0;
+}
+
+[data-about-updates-card] [data-update-status-card][data-tone='idle'] [data-update-status-banner],
+[data-about-updates-card] [data-update-status-card]:not([data-tone='available']):not([data-tone='error']):not([data-tone='unsupported'])
+  [data-update-status-banner] {
+  border-radius: 0.75rem;
+  background: #ecfdf5;
+  padding: 0.875rem 1rem;
+  color: #065f46;
+}
+
+:root.dark [data-about-updates-card] [data-update-status-card][data-tone='idle'] [data-update-status-banner],
+:root.dark
+  [data-about-updates-card]
+  [data-update-status-card]:not([data-tone='available']):not([data-tone='error']):not([data-tone='unsupported'])
+  [data-update-status-banner] {
+  background: color-mix(in srgb, #10b981 16%, transparent);
+  color: #6ee7b7;
+}
+
+[data-about-updates-card] [data-update-status-card][data-tone='available'] [data-update-status-banner] {
+  border-radius: 0.75rem;
+  background: #eef3fc;
+  padding: 0.875rem 1rem;
+}
+
+[data-about-updates-card] [data-update-status-card][data-tone='error'] [data-update-status-banner] {
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--destructive) 10%, transparent);
+  padding: 0.875rem 1rem;
+}
+
+[data-about-updates-card] [data-update-status-banner] .font-medium {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+[data-about-updates-card] [data-update-status-actions] {
+  margin-top: 0.875rem;
+  padding-inline: 0.15rem;
+}
+
+[data-about-updates-card] [data-about-check-now],
+[data-about-updates-card] [data-about-release-notes] {
+  height: auto;
+  padding: 0;
+  color: #2f5bea !important;
+  font-size: 13px;
+  font-weight: 600;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+:root.dark [data-about-updates-card] [data-about-check-now],
+:root.dark [data-about-updates-card] [data-about-release-notes] {
+  color: var(--ui-text-link, #8ab4ff) !important;
+}
+
+[data-about-updates-card] [data-version-details] {
+  margin-top: 0.75rem;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+}
+
+[data-about-updates-card] [data-version-details-row] + [data-version-details-row] {
+  border-top: 1px solid #e2e8f0;
+}
+
+:root.dark [data-about-updates-card] [data-version-details-row] + [data-version-details-row] {
+  border-top-color: var(--ui-stroke-tertiary);
+}
+
+[data-about-updates-card] [data-version-details-row] dt {
+  font-size: 14px;
+  color: #64748b;
+}
+
+[data-about-updates-card] [data-version-details-row] dd {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+:root.dark [data-about-updates-card] [data-version-details-row] dd {
+  color: var(--ui-text-primary);
 }

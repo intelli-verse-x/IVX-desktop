@@ -61,14 +61,16 @@ export function QuickEntrySettings() {
 
   return (
     <>
-      <ToggleRow
-        checked={state.enabled}
-        description={q.enabledDesc}
-        id={settingElementId(SETTING_IDS.advanced.quickEntry)}
-        label={q.enabledTitle}
-        onChange={enabled => void saveQuickEntrySettings({ enabled })}
-      />
-      <ListRow
+      <div className="scroll-mt-6" data-chat-settings-row="" id={settingElementId(SETTING_IDS.advanced.quickEntry)}>
+        <ToggleRow
+          checked={state.enabled}
+          description={q.enabledDesc}
+          label={q.enabledTitle}
+          onChange={enabled => void saveQuickEntrySettings({ enabled })}
+        />
+      </div>
+      <div className="scroll-mt-6" data-chat-settings-row="" id={settingElementId(SETTING_IDS.advanced.quickEntryShortcut)}>
+        <ListRow
         action={
           <Input
             aria-label={q.shortcutTitle}
@@ -99,9 +101,9 @@ export function QuickEntrySettings() {
           )
         }
         description={q.shortcutDesc}
-        id={settingElementId(SETTING_IDS.advanced.quickEntryShortcut)}
         title={q.shortcutTitle}
-      />
+        />
+      </div>
     </>
   )
 }

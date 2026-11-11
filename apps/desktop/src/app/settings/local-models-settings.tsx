@@ -3,6 +3,7 @@ import { type ReactElement, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 
 import { NEW_CHAT_ROUTE } from '@/app/routes'
+import { useI18n } from '@/i18n'
 import {
   localModelsCatalogOptions,
   localModelsHardwareOptions,
@@ -21,6 +22,7 @@ import { LocalModelsModelsSection } from './local-models-models-section'
 import { LocalModelsOwnerProvider, useScopedLocalModelsOwner } from './local-models-owner'
 import { LocalModelsQuickstart } from './local-models-quickstart'
 import { LocalModelsRuntimeSection } from './local-models-runtime-section'
+import './chat-settings.css'
 import { SettingsContent, SettingsSkeleton } from './primitives'
 import { ActiveProfileNote } from './profile-scope'
 
@@ -35,6 +37,8 @@ export function LocalModelsSettings(): ReactElement {
 }
 
 function ScopedLocalModelsSettings(): ReactElement {
+  const { t } = useI18n()
+  const copy = t.settings.localModels
   const owner: LocalModelsOwner = useScopedLocalModelsOwner()
   const installStarting: boolean = useIsMutating({ mutationKey: localModelsKey(owner, 'install') }) > 0
   const { data: status } = useLocalModelsStatus(owner)
@@ -120,10 +124,26 @@ function ScopedLocalModelsSettings(): ReactElement {
   return (
     <SettingsContent>
       <ActiveProfileNote className="mb-5" />
-      <LocalModelsRuntimeSection jobs={jobs} lastError={lastError} status={status} />
-      <LocalModelsHardwareSection hardware={hardware} />
-      <LocalModelsModelsSection catalog={catalog} jobs={jobs} lastError={lastError} status={status} />
-      <LocalModelsBrowseSection />
+      <section className="grid gap-3.5" data-providers-local="">
+        <header className="space-y-1.5">
+          <h1 className="text-[32px] font-extrabold leading-none tracking-tight text-[#0f172a] dark:text-foreground">
+            {copy.title}
+          </h1>
+          <p className="max-w-3xl text-[14px] text-[#64748b] dark:text-(--ui-text-tertiary)">{copy.pageDesc}</p>
+        </header>
+        <div data-providers-local-runtime="">
+          <LocalModelsRuntimeSection jobs={jobs} lastError={lastError} status={status} />
+        </div>
+        <div data-providers-local-hardware="">
+          <LocalModelsHardwareSection hardware={hardware} />
+        </div>
+        <div data-providers-local-models="">
+          <LocalModelsModelsSection catalog={catalog} jobs={jobs} lastError={lastError} status={status} />
+        </div>
+        <div data-providers-local-browse="">
+          <LocalModelsBrowseSection />
+        </div>
+      </section>
     </SettingsContent>
   )
 }

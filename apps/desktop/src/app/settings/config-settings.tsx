@@ -305,7 +305,13 @@ function ConfigSettingsInner({
   const showModelSettings =
     activeSectionId === 'model' && (subpage === undefined || ['main', 'auxiliary', 'moa'].includes(subpage))
 
-  const showDesktopSettings = activeSectionId === 'advanced' && (subpage === undefined || subpage === 'desktop')
+  const showAdvancedDesktop = activeSectionId === 'advanced' && subpage === 'desktop'
+  const showAdvancedRuntime = activeSectionId === 'advanced' && subpage === 'runtime'
+  const showAdvancedTools = activeSectionId === 'advanced' && subpage === 'tools'
+  const showAdvancedTerminal = activeSectionId === 'advanced' && subpage === 'terminal'
+  const showAdvancedDelegation = activeSectionId === 'advanced' && subpage === 'delegation'
+  const showAdvancedOutput = activeSectionId === 'advanced' && subpage === 'output'
+  const showDesktopSettings = showAdvancedDesktop
   const showAttachments = activeSectionId === 'chat' && (subpage === undefined || subpage === 'attachments')
   const showChatBehavior = activeSectionId === 'chat' && subpage === 'behavior'
   const showChatAttachments = activeSectionId === 'chat' && subpage === 'attachments'
@@ -471,35 +477,7 @@ function ConfigSettingsInner({
 
   return renderPage(
     <>
-      {/* Device-local desktop prefs (not config.yaml) — they live here since
-          keeping the machine awake and the global Quick Entry chord are both
-          power-user, this-computer-only knobs. */}
-      {showDesktopSettings && (
-        <>
-          <ToggleRow
-            checked={keepAwake}
-            description={c.keepAwakeDesc}
-            id={settingElementId(SETTING_IDS.advanced.keepAwake)}
-            label={c.keepAwakeTitle}
-            onChange={setKeepAwake}
-          />
-          <ToggleRow
-            checked={disableF12}
-            description={c.disableF12Desc}
-            id={settingElementId(SETTING_IDS.advanced.disableF12)}
-            label={c.disableF12Title}
-            onChange={setDisableF12}
-          />
-          <ToggleRow
-            checked={alwaysExternalLinks}
-            description={c.alwaysExternalLinksDesc}
-            label={c.alwaysExternalLinksTitle}
-            onChange={setAlwaysExternalLinks}
-          />
-          <PoolLimitsSetting />
-          <QuickEntrySettings />
-        </>
-      )}
+      {/* Desktop & startup device-local prefs render inside the Advanced Figma card below. */}
       {/* Device-local attach/preview byte cap (main-process IPC guard). On the
           Attachments subpage it lives inside the Figma card with image mode. */}
       {showAttachments && !showChatAttachments ? <AttachmentSizeSetting /> : null}
@@ -520,6 +498,57 @@ function ConfigSettingsInner({
             <div className="scroll-mt-6" data-chat-settings-row="">
               <AttachmentSizeSetting />
             </div>
+            {visibleFields.map(([key, field]) => (
+              <div className="scroll-mt-6" data-chat-settings-row="" id={`setting-field-${key}`} key={key}>
+                <ConfigField
+                  enumOptions={enumOptionsFor(key, getNested(config, key), config)}
+                  onChange={value => updateConfig(setNested(config, key, value))}
+                  schema={field}
+                  schemaKey={key}
+                  value={getNested(config, key)}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : showAdvancedDesktop ? (
+        <section className="grid gap-3.5" data-advanced-desktop="">
+          <header className="space-y-1.5">
+            <h1 className="text-[32px] font-extrabold leading-none tracking-tight text-[#0f172a] dark:text-foreground">
+              {t.settings.subpages.advancedDesktop}
+            </h1>
+            <p className="max-w-3xl text-[14px] text-[#64748b] dark:text-(--ui-text-tertiary)">
+              {c.advancedDesktopDesc}
+            </p>
+          </header>
+
+          <div data-advanced-desktop-card="">
+            <div className="scroll-mt-6" data-chat-settings-row="" id={settingElementId(SETTING_IDS.advanced.keepAwake)}>
+              <ToggleRow
+                checked={keepAwake}
+                description={c.keepAwakeDesc}
+                label={c.keepAwakeTitle}
+                onChange={setKeepAwake}
+              />
+            </div>
+            <div className="scroll-mt-6" data-chat-settings-row="" id={settingElementId(SETTING_IDS.advanced.disableF12)}>
+              <ToggleRow
+                checked={disableF12}
+                description={c.disableF12Desc}
+                label={c.disableF12Title}
+                onChange={setDisableF12}
+              />
+            </div>
+            <div className="scroll-mt-6" data-chat-settings-row="">
+              <ToggleRow
+                checked={alwaysExternalLinks}
+                description={c.alwaysExternalLinksDesc}
+                label={c.alwaysExternalLinksTitle}
+                onChange={setAlwaysExternalLinks}
+              />
+            </div>
+            <PoolLimitsSetting />
+            <QuickEntrySettings />
             {visibleFields.map(([key, field]) => (
               <div className="scroll-mt-6" data-chat-settings-row="" id={`setting-field-${key}`} key={key}>
                 <ConfigField
@@ -904,6 +933,131 @@ function ConfigSettingsInner({
                   }
                   onChange={value => updateConfig(setNested(config, key, value))}
                   optionLabels={key === 'tts.elevenlabs.voice_id' ? elevenLabsVoiceLabels : undefined}
+                  schema={field}
+                  schemaKey={key}
+                  value={getNested(config, key)}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : showAdvancedRuntime ? (
+        <section className="grid gap-3.5" data-advanced-runtime="">
+          <header className="space-y-1.5">
+            <h1 className="text-[32px] font-extrabold leading-none tracking-tight text-[#0f172a] dark:text-foreground">
+              {t.settings.subpages.advancedRuntime}
+            </h1>
+            <p className="max-w-3xl text-[14px] text-[#64748b] dark:text-(--ui-text-tertiary)">
+              {c.advancedRuntimeDesc}
+            </p>
+          </header>
+
+          <div data-advanced-runtime-card="">
+            {visibleFields.map(([key, field]) => (
+              <div className="scroll-mt-6" data-chat-settings-row="" id={`setting-field-${key}`} key={key}>
+                <ConfigField
+                  enumOptions={enumOptionsFor(key, getNested(config, key), config)}
+                  onChange={value => updateConfig(setNested(config, key, value))}
+                  schema={field}
+                  schemaKey={key}
+                  value={getNested(config, key)}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : showAdvancedTools ? (
+        <section className="grid gap-3.5" data-advanced-tools="">
+          <header className="space-y-1.5">
+            <h1 className="text-[32px] font-extrabold leading-none tracking-tight text-[#0f172a] dark:text-foreground">
+              {t.settings.subpages.advancedTools}
+            </h1>
+            <p className="max-w-3xl text-[14px] text-[#64748b] dark:text-(--ui-text-tertiary)">
+              {c.advancedToolsDesc}
+            </p>
+          </header>
+
+          <div data-advanced-tools-card="">
+            {visibleFields.map(([key, field]) => (
+              <div className="scroll-mt-6" data-chat-settings-row="" id={`setting-field-${key}`} key={key}>
+                <ConfigField
+                  enumOptions={enumOptionsFor(key, getNested(config, key), config)}
+                  onChange={value => updateConfig(setNested(config, key, value))}
+                  schema={field}
+                  schemaKey={key}
+                  value={getNested(config, key)}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : showAdvancedTerminal ? (
+        <section className="grid gap-3.5" data-advanced-terminal="">
+          <header className="space-y-1.5">
+            <h1 className="text-[32px] font-extrabold leading-none tracking-tight text-[#0f172a] dark:text-foreground">
+              {t.settings.subpages.advancedTerminal}
+            </h1>
+            <p className="max-w-3xl text-[14px] text-[#64748b] dark:text-(--ui-text-tertiary)">
+              {c.advancedTerminalDesc}
+            </p>
+          </header>
+
+          <div data-advanced-terminal-card="">
+            {visibleFields.map(([key, field]) => (
+              <div className="scroll-mt-6" data-chat-settings-row="" id={`setting-field-${key}`} key={key}>
+                <ConfigField
+                  enumOptions={enumOptionsFor(key, getNested(config, key), config)}
+                  onChange={value => updateConfig(setNested(config, key, value))}
+                  schema={field}
+                  schemaKey={key}
+                  value={getNested(config, key)}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : showAdvancedDelegation ? (
+        <section className="grid gap-3.5" data-advanced-delegation="">
+          <header className="space-y-1.5">
+            <h1 className="text-[32px] font-extrabold leading-none tracking-tight text-[#0f172a] dark:text-foreground">
+              {t.settings.subpages.advancedDelegation}
+            </h1>
+            <p className="max-w-3xl text-[14px] text-[#64748b] dark:text-(--ui-text-tertiary)">
+              {c.advancedDelegationDesc}
+            </p>
+          </header>
+
+          <div data-advanced-delegation-card="">
+            {visibleFields.map(([key, field]) => (
+              <div className="scroll-mt-6" data-chat-settings-row="" id={`setting-field-${key}`} key={key}>
+                <ConfigField
+                  enumOptions={enumOptionsFor(key, getNested(config, key), config)}
+                  onChange={value => updateConfig(setNested(config, key, value))}
+                  schema={field}
+                  schemaKey={key}
+                  value={getNested(config, key)}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : showAdvancedOutput ? (
+        <section className="grid gap-3.5" data-advanced-output="">
+          <header className="space-y-1.5">
+            <h1 className="text-[32px] font-extrabold leading-none tracking-tight text-[#0f172a] dark:text-foreground">
+              {t.settings.subpages.advancedOutput}
+            </h1>
+            <p className="max-w-3xl text-[14px] text-[#64748b] dark:text-(--ui-text-tertiary)">
+              {c.advancedOutputDesc}
+            </p>
+          </header>
+
+          <div data-advanced-output-card="">
+            {visibleFields.map(([key, field]) => (
+              <div className="scroll-mt-6" data-chat-settings-row="" id={`setting-field-${key}`} key={key}>
+                <ConfigField
+                  enumOptions={enumOptionsFor(key, getNested(config, key), config)}
+                  onChange={value => updateConfig(setNested(config, key, value))}
                   schema={field}
                   schemaKey={key}
                   value={getNested(config, key)}

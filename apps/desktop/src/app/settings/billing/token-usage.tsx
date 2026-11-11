@@ -2,11 +2,12 @@ import { compactNumber } from '@hermes/shared'
 import { useStore } from '@nanostores/react'
 import { useEffect, useState } from 'react'
 
+import { Button } from '@/components/ui/button'
 import { useI18n } from '@/i18n'
-import { Activity } from '@/lib/icons'
 import { $brandSession } from '@/store/brand-session'
 
-import { ListRow, SettingsSection } from '../primitives'
+import '../chat-settings.css'
+import { ListRow } from '../primitives'
 
 interface ModelUsageRow {
   inputTokens: number
@@ -30,10 +31,13 @@ function dollars(cents: number): string {
 export function TokenUsage() {
   const { t } = useI18n()
   const copy = t.settings.account
+  const billing = t.settings.billing
   const brand = useStore($brandSession)
+  const apiBrand = typeof window !== 'undefined' ? window.hermesDesktop?.brand : undefined
   const [view, setView] = useState<DesktopUsageView | null>(null)
   const [failed, setFailed] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [signingIn, setSigningIn] = useState(false)
 
   useEffect(() => {
     if (!brand.signedIn) {
@@ -114,37 +118,82 @@ export function TokenUsage() {
 
   const total = (view?.inputTokens || 0) + (view?.outputTokens || 0)
 
+  const signIn = () => {
+    if (!apiBrand) {
+      return
+    }
+
+    setSigningIn(true)
+    void apiBrand
+      .signIn()
+      .then(next => $brandSession.set(next))
+      .finally(() => setSigningIn(false))
+  }
+
   return (
-    <SettingsSection icon={Activity} title={copy.limitsTitle}>
-      {!brand.signedIn ? (
-        <p className="mb-4 text-sm text-(--ui-text-tertiary)">Sign in to load token usage from the server.</p>
-      ) : failed ? (
-        <p className="mb-4 text-sm text-(--ui-text-tertiary)">{copy.usageUnavailable}</p>
-      ) : loading && !view ? (
-        <p className="mb-4 text-sm text-(--ui-text-tertiary)">Loading token usage…</p>
-      ) : view && total > 0 ? (
-        <>
-          <ListRow action={compactNumber(total)} description={view.email} title={copy.usageTotal} />
-          <ListRow action={compactNumber(view.inputTokens)} title={copy.usageInput} />
-          <ListRow action={compactNumber(view.outputTokens)} title={copy.usageOutput} />
-          <ListRow action={dollars(view.creditCents)} title="Plan credit" />
-          {view.modelUsage.length > 0 ? (
-            <>
-              <p className="mt-3 mb-1 text-xs font-medium text-(--ui-text-secondary)">{copy.usageModels}</p>
-              {view.modelUsage.map(row => (
-                <ListRow
-                  action={compactNumber(row.inputTokens + row.outputTokens)}
-                  description={`in ${compactNumber(row.inputTokens)} · out ${compactNumber(row.outputTokens)}`}
-                  key={row.model}
-                  title={row.model}
-                />
-              ))}
-            </>
-          ) : null}
-        </>
-      ) : (
-        <p className="mb-4 text-sm text-(--ui-text-tertiary)">{copy.usageEmpty}</p>
-      )}
-    </SettingsSection>
+    <section className="grid gap-3.5" data-billing-token="">
+      <header className="space-y-1">
+        <h2 className="text-[15px] font-semibold tracking-tight text-[#0f172a] dark:text-foreground">
+          {copy.limitsTitle}
+        </h2>
+      </header>
+
+      <div data-billing-token-card="" data-empty={!brand.signedIn ? '' : undefined}>
+        {!brand.signedIn ? (
+          <div className="grid place-items-center px-6 py-12 text-center">
+            <p className="text-[15px] font-semibold text-[#0f172a] dark:text-foreground">{billing.signInToLoadTitle}</p>
+            <p className="mt-1.5 max-w-md text-[13px] text-[#64748b] dark:text-(--ui-text-tertiary)">
+              {billing.signInToLoadDesc}
+            </p>
+            <Button
+              className="mt-5"
+              data-billing-cta=""
+              disabled={signingIn || !apiBrand}
+              onClick={signIn}
+              type="button"
+            >
+              {copy.signIn}
+            </Button>
+          </div>
+        ) : failed ? (
+          <p className="px-5 py-6 text-[14px] text-[#64748b] dark:text-(--ui-text-tertiary)">{copy.usageUnavailable}</p>
+        ) : loading && !view ? (
+          <p className="px-5 py-6 text-[14px] text-[#64748b] dark:text-(--ui-text-tertiary)">Loading token usage…</p>
+        ) : view && total > 0 ? (
+          <>
+            <div data-chat-settings-row="">
+              <ListRow action={compactNumber(total)} description={view.email} title={copy.usageTotal} />
+            </div>
+            <div data-chat-settings-row="">
+              <ListRow action={compactNumber(view.inputTokens)} title={copy.usageInput} />
+            </div>
+            <div data-chat-settings-row="">
+              <ListRow action={compactNumber(view.outputTokens)} title={copy.usageOutput} />
+            </div>
+            <div data-chat-settings-row="">
+              <ListRow action={dollars(view.creditCents)} title={billing.planCredit} />
+            </div>
+            {view.modelUsage.length > 0 ? (
+              <>
+                <p className="px-5 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#94a3b8]">
+                  {copy.usageModels}
+                </p>
+                {view.modelUsage.map(row => (
+                  <div data-chat-settings-row="" key={row.model}>
+                    <ListRow
+                      action={compactNumber(row.inputTokens + row.outputTokens)}
+                      description={`in ${compactNumber(row.inputTokens)} · out ${compactNumber(row.outputTokens)}`}
+                      title={row.model}
+                    />
+                  </div>
+                ))}
+              </>
+            ) : null}
+          </>
+        ) : (
+          <p className="px-5 py-6 text-[14px] text-[#64748b] dark:text-(--ui-text-tertiary)">{copy.usageEmpty}</p>
+        )}
+      </div>
+    </section>
   )
 }

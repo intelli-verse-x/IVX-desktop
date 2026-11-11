@@ -116,12 +116,12 @@ export function SearchField({
         <Tip label={t.ui.search.clear}>
           <Button
             aria-label={t.ui.search.clear}
-            className="shrink-0 text-muted-foreground/85 hover:bg-accent/60 hover:text-foreground"
+            className="inline-flex shrink-0 self-center items-center justify-center text-muted-foreground/85 hover:bg-accent/60 hover:text-foreground"
             onClick={clear}
             size="icon-xs"
             variant="ghost"
           >
-            <Codicon name="close" size="0.875rem" />
+            <Codicon className="leading-none" name="close" size="0.875rem" />
           </Button>
         </Tip>
       ) : shortcutHint ? (

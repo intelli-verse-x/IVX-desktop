@@ -26,7 +26,8 @@ import { untombstoneSessions } from '@/store/session-removal'
 import { forgetSessionUnread } from '@/store/session-unread'
 import type { HermesConfigRecord, SessionInfo } from '@/types/hermes'
 
-import { EmptyState, ListRow, SectionHeading, SettingsContent, SettingsSkeleton, ToggleRow } from './primitives'
+import './chat-settings.css'
+import { ListRow, SettingsContent, SettingsSkeleton, ToggleRow } from './primitives'
 import { SETTING_IDS, settingElementId } from './settings-manifest'
 import { useDeepLinkHighlight } from './use-deep-link-highlight'
 import { useSettingDeepLink } from './use-setting-deep-link'
@@ -45,7 +46,7 @@ export function SessionsSettings({ subpage }: SessionsSettingsProps = {}) {
   if (subpage === 'default-directory') {
     return (
       <SettingsContent>
-        <DefaultProjectDirSetting />
+        <DefaultProjectDirSetting page />
       </SettingsContent>
     )
   }
@@ -147,66 +148,86 @@ function ArchivedSessionsSettings({ includeDefaultDirectory }: { includeDefaultD
 
   return (
     <SettingsContent>
-      {includeDefaultDirectory && <DefaultProjectDirSetting />}
+      <section className="grid gap-3.5" data-sessions-archive="">
+        <header className="space-y-1.5">
+          <h1 className="text-[32px] font-extrabold leading-none tracking-tight text-[#0f172a] dark:text-foreground">
+            {t.settings.subpages.archivedSessions}
+          </h1>
+        </header>
 
-      <AutoArchiveSetting />
+        {includeDefaultDirectory && <DefaultProjectDirSetting />}
 
-      <SectionHeading
-        icon={Archive}
-        meta={sessions.length ? String(sessions.length) : undefined}
-        title={s.archivedTitle}
-      />
-      <p className="mb-2 text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">
-        {s.archivedIntro}
-      </p>
+        <AutoArchiveSetting />
 
-      {sessions.length === 0 ? (
-        <EmptyState description={s.emptyArchivedDesc} title={s.emptyArchivedTitle} />
-      ) : (
-        <div className="grid gap-1">
-          {sessions.map(session => {
-            const label = pathLeaf(session.cwd)
-            const busy = busyId === session.id
+        <div className="grid gap-3" data-sessions-archived="">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Archive className="size-4 text-[#64748b]" />
+              <h2 className="text-[15px] font-semibold text-[#0f172a] dark:text-foreground">{s.archivedTitle}</h2>
+              {sessions.length > 0 ? (
+                <span className="text-[12px] text-[#94a3b8]">{sessions.length}</span>
+              ) : null}
+            </div>
+            <p className="text-[14px] text-[#64748b] dark:text-(--ui-text-tertiary)">{s.archivedIntro}</p>
+          </div>
 
-            return (
-              <div className="scroll-mt-6 rounded-lg" id={`archived-session-${session.id}`} key={session.id}>
-                <ListRow
-                  action={
-                    <div className="flex items-center gap-1.5">
-                      <Button
-                        disabled={busy}
-                        onClick={() => void unarchive(session)}
-                        size="sm"
-                        type="button"
-                        variant="textStrong"
-                      >
-                        {busy ? <Loader2 className="size-3.5 animate-spin" /> : <ArchiveOff className="size-3.5" />}
-                        <span>{s.unarchive}</span>
-                      </Button>
-                      <Tip label={s.deletePermanently}>
-                        <Button
-                          aria-label={s.deletePermanently}
-                          className="text-muted-foreground hover:text-destructive"
-                          disabled={busy}
-                          onClick={() => void remove(session)}
-                          size="icon"
-                          type="button"
-                          variant="ghost"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </Button>
-                      </Tip>
-                    </div>
-                  }
-                  description={session.preview || undefined}
-                  hint={label ? `${label} · ${s.messages(session.message_count)}` : s.messages(session.message_count)}
-                  title={sessionTitle(session)}
-                />
+          <div data-empty={sessions.length === 0 ? '' : undefined} data-sessions-archived-card="">
+            {sessions.length === 0 ? (
+              <div className="grid place-items-center px-6 py-10 text-center">
+                <p className="text-[15px] font-semibold text-[#0f172a] dark:text-foreground">{s.emptyArchivedTitle}</p>
+                <p className="mt-1 text-[13px] text-[#64748b] dark:text-(--ui-text-tertiary)">{s.emptyArchivedDesc}</p>
               </div>
-            )
-          })}
+            ) : (
+              sessions.map(session => {
+                const label = pathLeaf(session.cwd)
+                const busy = busyId === session.id
+
+                return (
+                  <div
+                    className="scroll-mt-6"
+                    data-chat-settings-row=""
+                    id={`archived-session-${session.id}`}
+                    key={session.id}
+                  >
+                    <ListRow
+                      action={
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            disabled={busy}
+                            onClick={() => void unarchive(session)}
+                            size="sm"
+                            type="button"
+                            variant="textStrong"
+                          >
+                            {busy ? <Loader2 className="size-3.5 animate-spin" /> : <ArchiveOff className="size-3.5" />}
+                            <span>{s.unarchive}</span>
+                          </Button>
+                          <Tip label={s.deletePermanently}>
+                            <Button
+                              aria-label={s.deletePermanently}
+                              className="text-muted-foreground hover:text-destructive"
+                              disabled={busy}
+                              onClick={() => void remove(session)}
+                              size="icon"
+                              type="button"
+                              variant="ghost"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </Button>
+                          </Tip>
+                        </div>
+                      }
+                      description={session.preview || undefined}
+                      hint={label ? `${label} · ${s.messages(session.message_count)}` : s.messages(session.message_count)}
+                      title={sessionTitle(session)}
+                    />
+                  </div>
+                )
+              })
+            )}
+          </div>
         </div>
-      )}
+      </section>
     </SettingsContent>
   )
 }
@@ -288,37 +309,40 @@ function AutoArchiveSetting() {
   }
 
   return (
-    <div className="mb-6">
-      <ToggleRow
-        checked={enabled}
-        description={s.autoArchiveDesc}
-        id={settingElementId(SETTING_IDS.sessions.autoArchive)}
-        label={s.autoArchiveTitle}
-        onChange={on => {
-          setEnabled(on)
-          void persist(on, days)
-        }}
-      />
-      {enabled && (
-        <ListRow
-          action={
-            <div className="flex items-center gap-2">
-              <Input
-                aria-label={s.autoArchiveDaysLabel}
-                className="w-20"
-                min={1}
-                onBlur={() => void persist(true, days)}
-                onChange={e => setDays(Math.max(1, Math.round(Number(e.target.value) || 1)))}
-                type="number"
-                value={days}
-              />
-              <span className="text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">
-                {s.autoArchiveDaysUnit}
-              </span>
-            </div>
-          }
-          title={s.autoArchiveDaysLabel}
+    <div data-sessions-auto-archive-card="" id={settingElementId(SETTING_IDS.sessions.autoArchive)}>
+      <div data-chat-settings-row="">
+        <ToggleRow
+          checked={enabled}
+          description={s.autoArchiveDesc}
+          label={s.autoArchiveTitle}
+          onChange={on => {
+            setEnabled(on)
+            void persist(on, days)
+          }}
         />
+      </div>
+      {enabled && (
+        <div data-chat-settings-row="">
+          <ListRow
+            action={
+              <div className="flex items-center gap-2">
+                <Input
+                  aria-label={s.autoArchiveDaysLabel}
+                  className="w-20"
+                  min={1}
+                  onBlur={() => void persist(true, days)}
+                  onChange={e => setDays(Math.max(1, Math.round(Number(e.target.value) || 1)))}
+                  type="number"
+                  value={days}
+                />
+                <span className="text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">
+                  {s.autoArchiveDaysUnit}
+                </span>
+              </div>
+            }
+            title={s.autoArchiveDaysLabel}
+          />
+        </div>
       )}
     </div>
   )
@@ -327,7 +351,7 @@ function AutoArchiveSetting() {
 // Lets the user pin the default cwd for new sessions. Without this, packaged
 // builds on Windows used to spawn sessions in the install dir (`win-unpacked`
 // / Program Files), which buried any files Hermes wrote there.
-function DefaultProjectDirSetting() {
+function DefaultProjectDirSetting({ page = false }: { page?: boolean }) {
   const { t } = useI18n()
   const s = t.settings.sessions
   const [dir, setDir] = useState<null | string>(null)
@@ -409,29 +433,50 @@ function DefaultProjectDirSetting() {
     }
   }, [s])
 
-  return (
-    <div className="mb-6">
-      <SectionHeading icon={FolderOpen} page title={s.defaultDirTitle} />
-      <p className="mb-2 text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">
-        {s.defaultDirDesc}
-      </p>
-      <ListRow
-        action={
-          <div className="flex items-center gap-3">
-            <Button disabled={busy} onClick={() => void choose()} size="sm" type="button" variant="textStrong">
-              <FolderOpen className="size-3.5" />
-              <span>{dir ? s.change : s.choose}</span>
-            </Button>
-            {dir && (
-              <Button disabled={busy} onClick={() => void clear()} size="sm" type="button" variant="text">
-                {s.clear}
+  const card = (
+    <div data-sessions-default-dir-card="">
+      <div data-chat-settings-row="">
+        <ListRow
+          action={
+            <div className="flex items-center gap-2">
+              <Button
+                data-sessions-choose=""
+                disabled={busy}
+                onClick={() => void choose()}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                <FolderOpen className="size-3.5" />
+                <span>{dir ? s.change : s.choose}</span>
               </Button>
-            )}
-          </div>
-        }
-        description={dir || s.notSet}
-        title={dir ? dir : s.notSet}
-      />
+              {dir && (
+                <Button disabled={busy} onClick={() => void clear()} size="sm" type="button" variant="ghost">
+                  {s.clear}
+                </Button>
+              )}
+            </div>
+          }
+          description={dir || s.notSet}
+          title={dir ? dir : s.notSet}
+        />
+      </div>
     </div>
+  )
+
+  if (!page) {
+    return card
+  }
+
+  return (
+    <section className="grid gap-3.5" data-sessions-default-dir="">
+      <header className="space-y-1.5">
+        <h1 className="text-[32px] font-extrabold leading-none tracking-tight text-[#0f172a] dark:text-foreground">
+          {t.settings.subpages.defaultDirectory}
+        </h1>
+        <p className="max-w-3xl text-[14px] text-[#64748b] dark:text-(--ui-text-tertiary)">{s.defaultDirDesc}</p>
+      </header>
+      {card}
+    </section>
   )
 }
