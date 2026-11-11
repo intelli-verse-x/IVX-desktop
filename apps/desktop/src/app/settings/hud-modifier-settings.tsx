@@ -6,6 +6,7 @@ import { useI18n } from '@/i18n'
 
 import type { HudModifierStatus } from '../../../electron/hud-modifier-types'
 
+import './chat-settings.css'
 import { ToggleRow } from './primitives'
 import { SETTING_IDS, settingElementId } from './settings-manifest'
 
@@ -92,34 +93,45 @@ export function HudModifierSettings() {
     (status?.enabled && status.state === 'unavailable' ? unavailableNotice : null)
 
   return (
-    <div id={settingElementId(SETTING_IDS.keybinds.hudModifier)}>
-      <ToggleRow
-        checked={status?.enabled ?? false}
-        description={copy.description}
-        disabled={!status || busy}
-        label={copy.title}
-        onChange={enabled => void refresh(enabled)}
-      />
-      {notice && (
-        <div className="space-y-2" role="alert">
-          <ErrorBanner>{notice}</ErrorBanner>
-          <div className="flex flex-wrap items-center gap-2">
-            {status?.state === 'input-permission' && (
-              <Button disabled={busy} onClick={() => void openPermissionSettings()} size="sm" variant="secondary">
-                {common.openSettings}
-              </Button>
-            )}
-            <Button
-              disabled={busy}
-              onClick={() => void refresh(error ? undefined : status?.enabled)}
-              size="sm"
-              variant="secondary"
-            >
-              {common.retry}
-            </Button>
-          </div>
+    <section className="grid gap-3.5" data-keybinds-hud="">
+      <header className="space-y-1.5">
+        <h1 className="text-[32px] font-extrabold leading-none tracking-tight text-[#0f172a] dark:text-foreground">
+          {t.settings.subpages.hudGesture}
+        </h1>
+        <p className="max-w-3xl text-[14px] text-[#64748b] dark:text-(--ui-text-tertiary)">{copy.pageDesc}</p>
+      </header>
+
+      <div data-keybinds-hud-card="" id={settingElementId(SETTING_IDS.keybinds.hudModifier)}>
+        <div data-chat-settings-row="">
+          <ToggleRow
+            checked={status?.enabled ?? false}
+            description={copy.description}
+            disabled={!status || busy}
+            label={copy.title}
+            onChange={enabled => void refresh(enabled)}
+          />
         </div>
-      )}
-    </div>
+        {notice && (
+          <div className="space-y-2 px-4 pb-4" role="alert">
+            <ErrorBanner>{notice}</ErrorBanner>
+            <div className="flex flex-wrap items-center gap-2">
+              {status?.state === 'input-permission' && (
+                <Button disabled={busy} onClick={() => void openPermissionSettings()} size="sm" variant="secondary">
+                  {common.openSettings}
+                </Button>
+              )}
+              <Button
+                disabled={busy}
+                onClick={() => void refresh(error ? undefined : status?.enabled)}
+                size="sm"
+                variant="secondary"
+              >
+                {common.retry}
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
   )
 }

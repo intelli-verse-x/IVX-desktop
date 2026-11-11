@@ -51,10 +51,10 @@ export function VersionDetails({ version }: { version: DesktopVersionInfo }) {
           : null
 
   return (
-    <dl className="grid gap-2 rounded-lg border border-border/70 bg-muted/20 px-3 py-3 text-sm">
-      <div className="flex justify-between gap-4">
+    <dl className="grid gap-0 rounded-lg border border-border/70 bg-muted/20 px-3 py-1 text-sm" data-version-details="">
+      <div className="flex justify-between gap-4 py-3" data-version-details-row="">
         <dt className="text-muted-foreground">{u.versionDetailsVersion}</dt>
-        <dd>
+        <dd className="text-right font-medium text-foreground">
           {version.appVersion
             ? `v${displayVersion(version.appVersion, version.productVersion)}`
             : u.versionUnavailable}
@@ -62,30 +62,30 @@ export function VersionDetails({ version }: { version: DesktopVersionInfo }) {
         </dd>
       </div>
       {source && (
-        <div className="flex justify-between gap-4">
+        <div className="flex justify-between gap-4 py-3" data-version-details-row="">
           <dt className="text-muted-foreground">{u.versionDetailsBuildOrigin}</dt>
-          <dd>
+          <dd className="text-right font-medium text-foreground">
             {source}
             {version.branch && version.branch !== 'main' ? ` (${version.branch})` : ''}
           </dd>
         </div>
       )}
       {distribution && (
-        <div className="flex justify-between gap-4">
+        <div className="flex justify-between gap-4 py-3" data-version-details-row="">
           <dt className="text-muted-foreground">{u.versionDetailsDistribution}</dt>
-          <dd>{distribution}</dd>
+          <dd className="text-right font-medium text-foreground">{distribution}</dd>
         </div>
       )}
       {runtime && (
-        <div className="flex justify-between gap-4">
+        <div className="flex justify-between gap-4 py-3" data-version-details-row="">
           <dt className="text-muted-foreground">{u.versionDetailsRuntime}</dt>
-          <dd className="break-all text-right">{runtime}</dd>
+          <dd className="break-all text-right font-medium text-foreground">{runtime}</dd>
         </div>
       )}
       {version.hermesRoot && (
-        <div className="flex justify-between gap-4">
+        <div className="flex justify-between gap-4 py-3" data-version-details-row="">
           <dt className="text-muted-foreground">{u.versionDetailsInstallId}</dt>
-          <dd className="break-all text-right">{version.hermesRoot}</dd>
+          <dd className="break-all text-right font-medium text-foreground">{version.hermesRoot}</dd>
         </div>
       )}
     </dl>

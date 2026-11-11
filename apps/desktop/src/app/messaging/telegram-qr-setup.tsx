@@ -248,25 +248,23 @@ export function TelegramQrSetup({ onApplied, platform, scopeProfile }: TelegramQ
   }
 
   return (
-    <div className="rounded-xl border border-(--ui-stroke-secondary) bg-(--ui-surface-secondary,transparent) p-3">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
+    <div data-messaging-quick-setup="">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0 max-w-xl flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[length:var(--conversation-text-font-size)] font-medium">{q.quickSetup}</span>
-            <Badge variant="success">{q.recommended}</Badge>
+            <span className="text-[15px] font-semibold text-[#0f172a] dark:text-foreground">{q.quickSetup}</span>
+            <span data-messaging-recommended-badge="">{q.recommended}</span>
           </div>
-          <p className="mt-1 text-[length:var(--conversation-caption-font-size)] leading-(--conversation-caption-line-height) text-(--ui-text-tertiary)">
-            {q.quickHelp}
-          </p>
+          <p className="mt-1.5 text-[13px] leading-5 text-[#64748b] dark:text-(--ui-text-tertiary)">{q.quickHelp}</p>
         </div>
         {phase === 'idle' && (
-          <Button onClick={() => void start()} size="sm">
+          <Button className="shrink-0" data-messaging-cta="" onClick={() => void start()} size="sm">
             <QrCode />
             {q.createWithQr}
           </Button>
         )}
         {phase === 'starting' && (
-          <Button disabled size="sm">
+          <Button className="shrink-0" data-messaging-cta="" disabled size="sm">
             {q.starting}
           </Button>
         )}
@@ -354,7 +352,7 @@ export function TelegramQrSetup({ onApplied, platform, scopeProfile }: TelegramQ
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <Button disabled={phase === 'applying'} onClick={() => void apply()} size="sm">
+                  <Button data-messaging-cta="" disabled={phase === 'applying'} onClick={() => void apply()} size="sm">
                     <Save />
                     {phase === 'applying' ? q.applying : q.saveAndRestart}
                   </Button>

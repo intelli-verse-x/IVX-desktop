@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/react'
-import { useContext, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Codicon } from '@/components/ui/codicon'
@@ -32,8 +32,9 @@ import {
   resetBinding
 } from '@/store/keybinds'
 
+import './chat-settings.css'
 import { HudModifierSettings } from './hud-modifier-settings'
-import { SettingsBreadcrumbContext, SettingsContent } from './primitives'
+import { SettingsContent } from './primitives'
 import { ScreenshotSettings } from './screenshot-settings'
 import { useSettingDeepLink } from './use-setting-deep-link'
 
@@ -65,7 +66,6 @@ export function KeybindSettings({ subpage }: KeybindSettingsProps = {}) {
 
 function ShortcutSettings({ includeScreenshot }: { includeScreenshot: boolean }) {
   const { t } = useI18n()
-  const hasBreadcrumb = useContext(SettingsBreadcrumbContext)
   const bindings = useStore($bindings)
   const k = t.keybinds
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
@@ -129,82 +129,86 @@ function ShortcutSettings({ includeScreenshot }: { includeScreenshot: boolean })
 
   return (
     <SettingsContent>
-      <div className="flex items-center justify-between gap-3 pb-3">
-        <div className="min-w-0">
-          {!hasBreadcrumb && <h2 className="text-sm font-semibold text-foreground">{k.title}</h2>}
-          <p className="mt-0.5 text-[0.72rem] text-muted-foreground">
+      <section className="grid gap-3.5" data-keybinds-shortcuts="">
+        <header className="space-y-1.5">
+          <h1 className="text-[32px] font-extrabold leading-none tracking-tight text-[#0f172a] dark:text-foreground">
+            {t.settings.subpages.keyboardShortcuts}
+          </h1>
+          <p className="max-w-3xl text-[14px] text-[#64748b] dark:text-(--ui-text-tertiary)">
             {k.subtitle(openCombo ? formatCombo(openCombo) : '')}
           </p>
+        </header>
+
+        {includeScreenshot &&
+          (!isSearching || t.settings.screenshot.enabledTitle.toLowerCase().includes(query.toLowerCase())) && (
+            <ScreenshotSettings />
+          )}
+
+        <div className="flex flex-wrap items-center gap-2.5">
+          <SearchField
+            aria-label={k.search}
+            containerClassName="min-w-[14rem] flex-1"
+            onChange={setQuery}
+            placeholder={k.search}
+            value={query}
+            variant="box"
+          />
+          <Button
+            className="shrink-0 gap-1.5"
+            data-keybinds-reset-all=""
+            onClick={resetAllBindings}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            <Codicon name="discard" size="0.8125rem" />
+            {k.resetAll}
+          </Button>
         </div>
-        <button
-          className="flex shrink-0 items-center gap-1 rounded-md text-[0.72rem] text-muted-foreground hover:text-foreground"
-          onClick={resetAllBindings}
-          type="button"
-        >
-          <Codicon name="discard" size="0.8125rem" />
-          {k.resetAll}
-        </button>
-      </div>
 
-      {includeScreenshot &&
-        (!isSearching || t.settings.screenshot.enabledTitle.toLowerCase().includes(query.toLowerCase())) && (
-          <ScreenshotSettings />
-        )}
-
-      <div className="pb-3">
-        <SearchField
-          aria-label={k.search}
-          containerClassName="w-full"
-          onChange={setQuery}
-          placeholder={k.search}
-          value={query}
-        />
-      </div>
-
-      {isSearching ? (
-        <div className="px-2 py-1.5">
-          {filteredActions?.length === 0 && filteredReadonly?.length === 0 ? (
-            <p className="px-2.5 py-4 text-center text-[0.82rem] text-muted-foreground">—</p>
+        <div data-keybinds-shortcuts-card="">
+          {isSearching ? (
+            filteredActions?.length === 0 && filteredReadonly?.length === 0 ? (
+              <p className="px-4 py-6 text-center text-[14px] text-[#64748b] dark:text-(--ui-text-tertiary)">—</p>
+            ) : (
+              <>
+                {filteredActions?.map(action => (
+                  <KeybindRow action={action} key={action.id} />
+                ))}
+                {filteredReadonly?.map(shortcut => (
+                  <ReadonlyRow key={shortcut.id} shortcut={shortcut} />
+                ))}
+              </>
+            )
           ) : (
-            <>
-              {filteredActions?.map(action => (
-                <KeybindRow action={action} key={action.id} />
-              ))}
-              {filteredReadonly?.map(shortcut => (
-                <ReadonlyRow key={shortcut.id} shortcut={shortcut} />
-              ))}
-            </>
+            KEYBIND_CATEGORIES.map(category => {
+              const actions = actionList.filter(
+                action => action.category === category && action.id !== KEYBIND_PANEL_ACTION
+              )
+
+              const readonly = KEYBIND_READONLY.filter(shortcut => shortcut.category === category)
+
+              if (actions.length === 0 && readonly.length === 0) {
+                return null
+              }
+
+              const sectionOpen = !collapsed.has(category)
+
+              return (
+                <section data-keybinds-category="" key={category}>
+                  <CategoryHeader
+                    label={k.categories[category] ?? category}
+                    onToggle={() => toggleCategory(category)}
+                    open={sectionOpen}
+                  />
+                  {sectionOpen && actions.map(action => <KeybindRow action={action} key={action.id} />)}
+                  {sectionOpen && readonly.map(shortcut => <ReadonlyRow key={shortcut.id} shortcut={shortcut} />)}
+                </section>
+              )
+            })
           )}
         </div>
-      ) : (
-        <div className="px-2 py-1.5">
-          {KEYBIND_CATEGORIES.map(category => {
-            const actions = actionList.filter(
-              action => action.category === category && action.id !== KEYBIND_PANEL_ACTION
-            )
-
-            const readonly = KEYBIND_READONLY.filter(shortcut => shortcut.category === category)
-
-            if (actions.length === 0 && readonly.length === 0) {
-              return null
-            }
-
-            const sectionOpen = !collapsed.has(category)
-
-            return (
-              <section key={category}>
-                <CategoryHeader
-                  label={k.categories[category] ?? category}
-                  onToggle={() => toggleCategory(category)}
-                  open={sectionOpen}
-                />
-                {sectionOpen && actions.map(action => <KeybindRow action={action} key={action.id} />)}
-                {sectionOpen && readonly.map(shortcut => <ReadonlyRow key={shortcut.id} shortcut={shortcut} />)}
-              </section>
-            )
-          })}
-        </div>
-      )}
+      </section>
     </SettingsContent>
   )
 }
@@ -212,11 +216,12 @@ function ShortcutSettings({ includeScreenshot }: { includeScreenshot: boolean })
 function CategoryHeader({ label, onToggle, open }: { label: string; onToggle: () => void; open: boolean }) {
   return (
     <button
-      className="group/kbd-cat flex w-fit min-w-0 items-center gap-1 px-2.5 pb-1 pt-3 text-left leading-none"
+      className="group/kbd-cat flex w-fit min-w-0 items-center gap-1 px-4 pb-1.5 pt-4 text-left leading-none first:pt-3.5"
+      data-keybinds-category-header=""
       onClick={onToggle}
       type="button"
     >
-      <span className="min-w-0 truncate text-[0.64rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">
+      <span className="min-w-0 truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-[#94a3b8] dark:text-(--ui-text-tertiary)">
         {label}
       </span>
       <DisclosureCaret
@@ -247,8 +252,11 @@ function KeybindRow({ action }: { action: KeybindActionMeta }) {
     .find(Boolean)
 
   return (
-    <div className="group flex items-center gap-2.5 rounded-lg px-2.5 py-1 transition-colors hover:bg-(--chrome-action-hover)">
-      <span className="min-w-0 flex-1 truncate text-[0.82rem] text-foreground/90">{label}</span>
+    <div
+      className="group flex items-center gap-2.5 px-4 py-3 transition-colors hover:bg-[#f8fafc] dark:hover:bg-(--ui-bg-quinary)"
+      data-keybinds-row=""
+    >
+      <span className="min-w-0 flex-1 truncate text-[14px] text-[#0f172a] dark:text-foreground">{label}</span>
 
       {conflict && (
         <span className="flex size-4 items-center justify-center text-amber-500/90" title={k.conflictWith(conflict)}>
@@ -317,8 +325,8 @@ function ReadonlyRow({ shortcut }: { shortcut: KeybindReadonly }) {
   const label = k.actions[shortcut.id] ?? shortcut.id
 
   return (
-    <div className="flex items-center gap-2.5 rounded-lg px-2.5 py-1">
-      <span className="min-w-0 flex-1 truncate text-[0.82rem] text-foreground/75">{label}</span>
+    <div className="flex items-center gap-2.5 px-4 py-3" data-keybinds-row="">
+      <span className="min-w-0 flex-1 truncate text-[14px] text-[#334155] dark:text-foreground/80">{label}</span>
       <div className="flex shrink-0 items-center gap-1">
         {shortcut.keys.map(key => (
           <KbdCombo combo={key} key={key} />

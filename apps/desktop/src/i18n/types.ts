@@ -896,6 +896,7 @@ export interface Translations {
     }
     account: {
       title: string
+      pageDesc: string
       intro: string
       email: string
       brand: string
@@ -1289,9 +1290,11 @@ export interface Translations {
       deleteConfirm: (name: string) => string
       deleteFailed: string
       title: string
+      pageDesc: string
       deleteEndpoint: string
       emptyDescription: string
       emptyTitle: string
+      emptyMeta: (count: number) => string
       namePlaceholder: string
       contextPlaceholder: string
     }
@@ -1302,6 +1305,7 @@ export interface Translations {
     }
     about: {
       updates: string
+      updatesPageDesc: string
     }
     config: {
       minimizeToTrayTitle: string
@@ -1351,8 +1355,15 @@ export interface Translations {
       voiceConversationDesc: string
       voiceTranscriptionDesc: string
       voiceSpeechDesc: string
+      advancedDesktopDesc: string
+      advancedRuntimeDesc: string
+      advancedToolsDesc: string
+      advancedTerminalDesc: string
+      advancedDelegationDesc: string
+      advancedOutputDesc: string
     }
     hudModifier: {
+      pageDesc: string
       title: string
       description: string
       permission: string
@@ -1620,6 +1631,8 @@ export interface Translations {
       loading: string
       failedLoad: string
       empty: string
+      toolsDesc: string
+      settingsDesc: string
     }
     search: {
       placeholder: string
@@ -1731,6 +1744,7 @@ export interface Translations {
     localModels: {
       connectionChanged: string
       title: string
+      pageDesc: string
       runtimeTitle: string
       runtimeReady: (backend: string) => string
       serverRunning: string
@@ -1896,6 +1910,10 @@ export interface Translations {
         failedBody: (reason: string) => string
       }
       title: string
+      overviewDesc: string
+      signInToLoadTitle: string
+      signInToLoadDesc: string
+      planCredit: string
       preview: string
       summary: {
         balance: string
@@ -2061,6 +2079,7 @@ export interface Translations {
       connectAccount: string
       haveApiKey: string
       intro: string
+      keysIntro: string
       connected: string
       collapse: string
       connectAnother: string
@@ -2664,6 +2683,8 @@ export interface Translations {
   }
 
   messaging: {
+    title: string
+    gatewayChannels: string
     search: string
     statusFilter: Record<'all' | 'bad' | 'good' | 'muted' | 'warn', string>
     loading: string

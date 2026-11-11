@@ -34,15 +34,27 @@
   color: var(--ui-text-primary);
 }
 
+/* Expanded section well (Providers + subpages, etc.) */
+[data-overlay-nav-group][data-expanded] {
+  border-radius: 12px;
+  background: #f1f5f9;
+  padding: 0.25rem;
+}
+
+:root.dark [data-overlay-nav-group][data-expanded] {
+  background: var(--ui-bg-quinary);
+}
+
 [data-overlay-nav-item][data-active][data-nested] {
   border-color: transparent;
-  background: #e3ecfd;
+  /* Slightly darker than the expanded group well so the selection pops */
+  background: #dbe7fc;
   color: #2f5bea;
   font-weight: 600;
 }
 
 :root.dark [data-overlay-nav-item][data-active][data-nested] {
-  background: color-mix(in srgb, var(--ui-blue) 16%, transparent);
+  background: color-mix(in srgb, var(--ui-blue) 22%, transparent);
   color: color-mix(in srgb, var(--ui-blue) 85%, white);
 }
 

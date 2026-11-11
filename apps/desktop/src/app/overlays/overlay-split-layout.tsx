@@ -130,8 +130,9 @@ export const OverlayNavItem = memo(function OverlayNavItem({
         'row-hover flex h-8 w-full shrink-0 items-center justify-start gap-2.5 rounded-[10px] border px-2.5 text-left text-[13px] font-medium transition-colors',
         nested
           ? active
-            ? 'border-transparent bg-[#e3ecfd] font-semibold text-[#2f5bea] dark:bg-[color-mix(in_srgb,var(--ui-blue)_16%,transparent)] dark:text-[color-mix(in_srgb,var(--ui-blue)_85%,white)]'
-            : 'border-transparent bg-transparent font-normal text-[#64748b] hover:bg-[#f1f5f9] hover:text-[#0f172a] dark:text-(--ui-text-tertiary) dark:hover:bg-(--chrome-action-hover) dark:hover:text-foreground'
+            ? // Darker than the expanded group well (#f1f5f9) so the selected subpage reads clearly.
+              'border-transparent bg-[#dbe7fc] font-semibold text-[#2f5bea] dark:bg-[color-mix(in_srgb,var(--ui-blue)_22%,transparent)] dark:text-[color-mix(in_srgb,var(--ui-blue)_85%,white)]'
+            : 'border-transparent bg-transparent font-normal text-[#64748b] hover:bg-[#e8eef6] hover:text-[#0f172a] dark:text-(--ui-text-tertiary) dark:hover:bg-(--chrome-action-hover) dark:hover:text-foreground'
           : active
             ? 'border-transparent bg-transparent font-semibold text-[#2f5bea] dark:text-[color-mix(in_srgb,var(--ui-blue)_85%,white)]'
             : 'border-transparent bg-transparent text-[#334155] hover:bg-[#f1f5f9] hover:text-[#0f172a] dark:text-(--ui-text-secondary) dark:hover:bg-(--chrome-action-hover) dark:hover:text-foreground'
@@ -236,68 +237,78 @@ export function OverlayNav({
           return (
             <Fragment key={group.id}>
               {group.gapBefore && <div aria-hidden className="h-2" />}
-              <div className="relative">
-                <OverlayNavItem
-                  active={group.active}
-                  current={group.active && !group.children?.some(child => child.active)}
-                  icon={group.icon}
-                  id={group.id}
-                  label={group.label}
-                  onClick={() => {
-                    if (hasChildren) {
-                      setDisclosures(previous => {
-                        if (previous[group.id] !== false) {
-                          return previous
-                        }
+              <div
+                className={cn(
+                  // Figma: expanded parent + subpages sit in one pale rounded well;
+                  // leaf rows and collapsed parents stay flush with the rail.
+                  hasChildren && expanded && 'rounded-[12px] bg-[#f1f5f9] p-1 dark:bg-(--ui-bg-quinary)'
+                )}
+                data-expanded={hasChildren && expanded ? '' : undefined}
+                data-overlay-nav-group=""
+              >
+                <div className="relative">
+                  <OverlayNavItem
+                    active={group.active}
+                    current={group.active && !group.children?.some(child => child.active)}
+                    icon={group.icon}
+                    id={group.id}
+                    label={group.label}
+                    onClick={() => {
+                      if (hasChildren) {
+                        setDisclosures(previous => {
+                          if (previous[group.id] !== false) {
+                            return previous
+                          }
 
-                        const next = { ...previous }
-                        delete next[group.id]
+                          const next = { ...previous }
+                          delete next[group.id]
 
-                        return next
-                      })
-                    }
+                          return next
+                        })
+                      }
 
-                    group.onSelect()
-                  }}
-                  trailing={hasChildren ? <span aria-hidden className="w-4 shrink-0" /> : undefined}
-                />
+                      group.onSelect()
+                    }}
+                    trailing={hasChildren ? <span aria-hidden className="w-4 shrink-0" /> : undefined}
+                  />
+                  {hasChildren && (
+                    <Button
+                      aria-controls={childrenId}
+                      aria-expanded={expanded}
+                      aria-label={`${expanded ? t.common.collapse : t.common.expand}: ${group.label}`}
+                      className={cn(
+                        'absolute right-0.5 top-1/2 -translate-y-1/2 text-[#94a3b8]',
+                        (expanded || group.active) && 'text-[#2f5bea]'
+                      )}
+                      data-tour={`nav-toggle-${group.id}`}
+                      onClick={() => setDisclosures(previous => ({ ...previous, [group.id]: !expanded }))}
+                      size="icon-xs"
+                      type="button"
+                      variant="ghost"
+                    >
+                      <DisclosureCaret open={expanded} />
+                    </Button>
+                  )}
+                </div>
                 {hasChildren && (
-                  <Button
-                    aria-controls={childrenId}
-                    aria-expanded={expanded}
-                    aria-label={`${expanded ? t.common.collapse : t.common.expand}: ${group.label}`}
-                    className={cn(
-                      'absolute right-0.5 top-1/2 -translate-y-1/2 text-[#94a3b8]',
-                      (expanded || group.active) && 'text-[#2f5bea]'
-                    )}
-                    data-tour={`nav-toggle-${group.id}`}
-                    onClick={() => setDisclosures(previous => ({ ...previous, [group.id]: !expanded }))}
-                    size="icon-xs"
-                    type="button"
-                    variant="ghost"
+                  <div
+                    className={cn('mt-0.5 flex flex-col gap-0.5 pl-7', !expanded && 'hidden')}
+                    hidden={!expanded}
+                    id={childrenId}
                   >
-                    <DisclosureCaret open={expanded} />
-                  </Button>
+                    {group.children?.map(child => (
+                      <OverlayNavItem
+                        active={child.active}
+                        id={child.id}
+                        key={child.id}
+                        label={child.label}
+                        nested
+                        onClick={child.onSelect}
+                      />
+                    ))}
+                  </div>
                 )}
               </div>
-              {hasChildren && (
-                <div
-                  className={cn('ml-1 flex flex-col gap-0.5 pl-7', !expanded && 'hidden')}
-                  hidden={!expanded}
-                  id={childrenId}
-                >
-                  {group.children?.map(child => (
-                    <OverlayNavItem
-                      active={child.active}
-                      id={child.id}
-                      key={child.id}
-                      label={child.label}
-                      nested
-                      onClick={child.onSelect}
-                    />
-                  ))}
-                </div>
-              )}
             </Fragment>
           )
         })}

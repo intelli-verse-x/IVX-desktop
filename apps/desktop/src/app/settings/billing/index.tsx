@@ -11,6 +11,7 @@ import { BarChart3, CreditCard, ExternalLink, Package, Wrench } from '@/lib/icon
 import { cn } from '@/lib/utils'
 
 import { useRouteEnumParam } from '../../hooks/use-route-enum-param'
+import '../chat-settings.css'
 import { ListRow, SectionHeading, SettingsContent, SettingsSection } from '../primitives'
 
 import { RowValue } from './account-row-value'
@@ -405,16 +406,19 @@ function BillingHeader({
   const { t } = useI18n()
 
   return (
-    <SectionHeading
-      aside={
-        import.meta.env.DEV && fixtureName && onFixtureChange ? (
-          <BillingFixtureSelect onValueChange={onFixtureChange} value={fixtureName} />
-        ) : undefined
-      }
-      icon={BarChart3}
-      page
-      title={t.settings.nav.billing}
-    />
+    <header className="flex flex-wrap items-start justify-between gap-3">
+      <div className="min-w-0 space-y-1.5">
+        <h1 className="text-[32px] font-extrabold leading-none tracking-tight text-[#0f172a] dark:text-foreground">
+          {t.settings.subpages.billingOverview}
+        </h1>
+        <p className="max-w-3xl text-[14px] text-[#64748b] dark:text-(--ui-text-tertiary)">
+          {t.settings.billing.overviewDesc}
+        </p>
+      </div>
+      {import.meta.env.DEV && fixtureName && onFixtureChange ? (
+        <BillingFixtureSelect onValueChange={onFixtureChange} value={fixtureName} />
+      ) : null}
+    </header>
   )
 }
 
@@ -474,51 +478,65 @@ function BillingSettingsContent({
 
   return (
     <SettingsContent>
-      <BillingHeader fixtureName={fixtureName} onFixtureChange={onFixtureChange} />
+      <section className="grid gap-3.5" data-billing-overview="">
+        <BillingHeader fixtureName={fixtureName} onFixtureChange={onFixtureChange} />
 
-      {view.notice && <NoticeCard notice={view.notice} />}
+        {view.notice && <NoticeCard notice={view.notice} />}
 
-      <TokenUsage />
+        <TokenUsage />
 
-      {view.plan && (
-        <SettingsSection icon={Package} title={b.sections.plan}>
-          <CurrentPlanCard onViewPlans={() => setSubView('plans')} plan={view.plan} />
-          {view.planFootnote && (
-            <div className="mt-1 text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">
-              {view.planFootnote}
-            </div>
-          )}
-        </SettingsSection>
-      )}
-
-      {(paymentRow || accountRows.length > 0) && (
-        <SettingsSection
-          aside={paymentRow ? <PaymentMethodAside row={paymentRow} /> : undefined}
-          icon={CreditCard}
-          title={b.sections.paymentAndCredits}
-        >
-          {accountRows.map(row => (
-            <AccountRow billing={billing} key={row.id} row={row} />
-          ))}
-        </SettingsSection>
-      )}
-
-      {view.usageRows.length > 0 && (
-        <SettingsSection icon={BarChart3} title={b.sections.usage}>
-          <div className="@container">
-            {view.usageRows.map(row => (
-              <UsageRow key={row.id} row={row} />
-            ))}
+        {view.plan && (
+          <div data-billing-plan-card="">
+            <SettingsSection icon={Package} title={b.sections.plan}>
+              <div data-chat-settings-row="">
+                <CurrentPlanCard onViewPlans={() => setSubView('plans')} plan={view.plan} />
+              </div>
+              {view.planFootnote && (
+                <div className="px-5 pb-4 text-[13px] text-[#64748b] dark:text-(--ui-text-tertiary)">
+                  {view.planFootnote}
+                </div>
+              )}
+            </SettingsSection>
           </div>
-        </SettingsSection>
-      )}
+        )}
 
-      {
-        // no endpoint yet — NAS capability-board gap
-        FEATURE_BILLING_INVOICES ? (
-          <SectionHeading icon={BarChart3} title={t.settings.billing.sections.invoices} />
-        ) : null
-      }
+        {(paymentRow || accountRows.length > 0) && (
+          <div data-billing-payment-card="">
+            <SettingsSection
+              aside={paymentRow ? <PaymentMethodAside row={paymentRow} /> : undefined}
+              icon={CreditCard}
+              title={b.sections.paymentAndCredits}
+            >
+              {accountRows.map(row => (
+                <div data-chat-settings-row="" key={row.id}>
+                  <AccountRow billing={billing} row={row} />
+                </div>
+              ))}
+            </SettingsSection>
+          </div>
+        )}
+
+        {view.usageRows.length > 0 && (
+          <div data-billing-usage-card="">
+            <SettingsSection icon={BarChart3} title={b.sections.usage}>
+              <div className="@container">
+                {view.usageRows.map(row => (
+                  <div data-chat-settings-row="" key={row.id}>
+                    <UsageRow row={row} />
+                  </div>
+                ))}
+              </div>
+            </SettingsSection>
+          </div>
+        )}
+
+        {
+          // no endpoint yet — NAS capability-board gap
+          FEATURE_BILLING_INVOICES ? (
+            <SectionHeading icon={BarChart3} title={t.settings.billing.sections.invoices} />
+          ) : null
+        }
+      </section>
     </SettingsContent>
   )
 }

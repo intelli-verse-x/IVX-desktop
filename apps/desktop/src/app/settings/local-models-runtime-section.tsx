@@ -104,7 +104,12 @@ export function LocalModelsRuntimeSection({ status, jobs, lastError }: LocalMode
       ) : (
         <ListRow
           action={
-            <Button disabled={installStarting} onClick={() => void startLocalRuntimeInstall(owner, client)} size="sm">
+            <Button
+              data-providers-cta=""
+              disabled={installStarting}
+              onClick={() => void startLocalRuntimeInstall(owner, client)}
+              size="sm"
+            >
               <Download />
               {copy.installAction}
             </Button>
@@ -117,7 +122,12 @@ export function LocalModelsRuntimeSection({ status, jobs, lastError }: LocalMode
       {status.update_available && !rJob && (
         <ListRow
           action={
-            <Button disabled={installStarting} onClick={() => void startLocalRuntimeInstall(owner, client)} size="sm">
+            <Button
+              data-providers-cta=""
+              disabled={installStarting}
+              onClick={() => void startLocalRuntimeInstall(owner, client)}
+              size="sm"
+            >
               <Download />
               {copy.updateAction}
             </Button>

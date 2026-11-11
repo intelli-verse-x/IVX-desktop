@@ -173,15 +173,15 @@ export function VersionHero({
   const u = t.updates
 
   return (
-    <div className="flex flex-col items-center gap-3 pt-6 pb-2 text-center">
-      <BrandMark className="size-16" />
+    <div className="flex flex-col items-center gap-3 pt-2 pb-1 text-center" data-version-hero="">
+      <BrandMark className="size-[4.5rem] rounded-[1.25rem]" />
       <div>
         {renderHeading ? (
           renderHeading(u.appName)
         ) : (
-          <h2 className="text-lg font-semibold tracking-tight">{u.appName}</h2>
+          <h2 className="text-[18px] font-semibold tracking-tight text-[#0f172a] dark:text-foreground">{u.appName}</h2>
         )}
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="mt-1 text-[13px] text-[#64748b] dark:text-muted-foreground">
           {version?.appVersion
             ? u.version(displayVersion(version.appVersion, version.productVersion))
             : u.versionUnavailable}
@@ -298,28 +298,34 @@ export function UpdateStatusCard({
         view.tone === 'error' && 'border-destructive/35 bg-destructive/5 text-destructive',
         (view.tone === 'idle' || view.tone === 'unsupported') && 'border-border/70 bg-muted/20 text-foreground'
       )}
+      data-update-status-card=""
+      data-tone={view.tone}
     >
-      <div className="flex items-start gap-2">
+      <div className="flex items-start gap-2" data-update-status-banner="">
         {view.tone === 'available' ? (
           <Codicon className="mt-0.5 size-4 shrink-0 text-primary" name="cloud-download" size="1rem" />
         ) : view.tone === 'error' || view.tone === 'unsupported' ? null : (
           <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
         )}
         <div className="min-w-0">
-          <p className="font-medium">{view.line}</p>
+          <p className="font-medium">
+            {view.line}
+            {view.tone !== 'unsupported' && (
+              <span className="font-normal text-muted-foreground">
+                {' '}
+                {u.lastChecked(relativeTime(status?.fetchedAt, u))}
+                {justChecked && !checking ? u.justNowSuffix : ''}
+              </span>
+            )}
+          </p>
           {view.error && <p className="mt-1 text-xs text-muted-foreground">{view.error}</p>}
-          {view.tone !== 'unsupported' && (
-            <p className="mt-1 text-xs text-muted-foreground">
-              {u.lastChecked(relativeTime(status?.fetchedAt, u))}
-              {justChecked && !checking ? u.justNowSuffix : ''}
-            </p>
-          )}
         </div>
       </div>
 
       {view.tone !== 'unsupported' && (
-        <div className="mt-3 flex flex-wrap items-center gap-4">
+        <div className="mt-3 flex flex-wrap items-center gap-4" data-update-status-actions="">
           <Button
+            data-about-check-now=""
             disabled={checking || view.applying}
             onClick={() => void handleCheck()}
             size="sm"
@@ -332,7 +338,7 @@ export function UpdateStatusCard({
           <UpdateActions target={target} u={u} view={view} />
 
           {showReleaseNotes && (
-            <Button asChild className="ml-auto" size="sm" variant="text">
+            <Button asChild className="ml-auto" data-about-release-notes="" size="sm" variant="text">
               <a
                 href={RELEASE_NOTES_URL}
                 onClick={event => {

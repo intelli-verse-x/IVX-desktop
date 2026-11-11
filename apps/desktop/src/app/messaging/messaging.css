@@ -1,0 +1,312 @@
+/* Messaging — Figma 518:17598 */
+
+[data-messaging-page] {
+  background: #f5f7fa;
+}
+
+:root.dark [data-messaging-page] {
+  background: transparent;
+}
+
+/* Left rail: white panel */
+[data-messaging-page] > .min-h-0.flex-1 > div > aside,
+[data-messaging-page] aside {
+  background: #fff;
+  border-right: 1px solid #e8edf5;
+  padding: 0.75rem 0.625rem;
+}
+
+:root.dark [data-messaging-page] aside {
+  background: var(--ui-chat-bubble-background);
+  border-right-color: var(--ui-stroke-tertiary);
+}
+
+[data-messaging-list-header] {
+  padding: 0.5rem 0.75rem 1rem;
+}
+
+[data-messaging-list-header] h1 {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: #0f172a;
+}
+
+:root.dark [data-messaging-list-header] h1 {
+  color: var(--ui-text-primary);
+}
+
+[data-messaging-list-header] p {
+  margin: 0.25rem 0 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: #64748b;
+}
+
+:root.dark [data-messaging-list-header] p {
+  color: var(--ui-text-tertiary);
+}
+
+[data-messaging-platform-row] {
+  min-height: 2.625rem;
+  gap: 0.75rem;
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+}
+
+[data-messaging-platform-row]:hover {
+  background: #f1f5f9;
+}
+
+[data-messaging-platform-row][data-active='true'] {
+  background: #e3ecfd;
+  color: #1d4ed8;
+}
+
+:root.dark [data-messaging-platform-row]:hover {
+  background: var(--ui-bg-quinary);
+}
+
+:root.dark [data-messaging-platform-row][data-active='true'] {
+  background: color-mix(in srgb, #2f5bea 20%, transparent);
+  color: #93c5fd;
+}
+
+/* Detail canvas */
+[data-messaging-page] main {
+  background: #f5f7fa;
+}
+
+:root.dark [data-messaging-page] main {
+  background: transparent;
+}
+
+/* DetailColumn defaults to centered max-w-2xl — Figma fills the pane */
+[data-messaging-page] main > div:first-child > div {
+  display: grid;
+  width: 100%;
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+  gap: 1.25rem;
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+
+[data-messaging-page] main > div:first-child > div > * + * {
+  margin-top: 0; /* override Tailwind space-y on the detail stack */
+}
+
+[data-messaging-page] main > footer > div {
+  width: 100%;
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+[data-messaging-detail-header] {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+}
+
+[data-messaging-detail-title] {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: #0f172a;
+}
+
+:root.dark [data-messaging-detail-title] {
+  color: var(--ui-text-primary);
+}
+
+[data-messaging-detail-badges] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+[data-messaging-detail-desc] {
+  margin: 0.55rem 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+:root.dark [data-messaging-detail-desc] {
+  color: var(--ui-text-tertiary);
+}
+
+[data-messaging-setup-pill='warn'] {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+:root.dark [data-messaging-setup-pill='warn'] {
+  background: color-mix(in srgb, #f97316 18%, transparent);
+  color: #fdba74;
+}
+
+[data-messaging-section] {
+  display: grid;
+  gap: 0.55rem;
+}
+
+[data-messaging-section-title] {
+  margin: 0;
+  padding-inline: 0.15rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+[data-messaging-card] {
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(38, 64, 140, 0.05);
+  padding: 1.125rem 1.25rem;
+}
+
+:root.dark [data-messaging-card] {
+  border-color: var(--ui-stroke-tertiary);
+  background: var(--ui-chat-bubble-background);
+  box-shadow: none;
+}
+
+/* Quick setup card fills the section card — avoid double chrome */
+[data-messaging-card] > [data-messaging-quick-setup] {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+}
+
+[data-messaging-recommended-badge] {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: #16a34a;
+  color: #fff;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.55rem;
+}
+
+[data-messaging-cta],
+[data-messaging-page] [data-messaging-cta] {
+  height: 2.375rem;
+  border: none !important;
+  border-radius: 0.75rem;
+  background: linear-gradient(90deg, #7b61ff 0%, #4c3bff 100%) !important;
+  color: #fff !important;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: none !important;
+}
+
+[data-messaging-cta]:hover,
+[data-messaging-page] [data-messaging-cta]:hover {
+  filter: brightness(1.05);
+}
+
+[data-messaging-cta]:disabled {
+  opacity: 0.55;
+  filter: none;
+}
+
+[data-messaging-guide-link] {
+  color: #2f5bea !important;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+:root.dark [data-messaging-guide-link] {
+  color: var(--ui-text-link, #8ab4ff) !important;
+}
+
+[data-messaging-field] {
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.55rem 0;
+}
+
+[data-messaging-field] + [data-messaging-field] {
+  border-top: 1px solid #f1f5f9;
+  margin-top: 0.25rem;
+  padding-top: 0.9rem;
+}
+
+:root.dark [data-messaging-field] + [data-messaging-field] {
+  border-top-color: var(--ui-stroke-tertiary);
+}
+
+[data-messaging-field] [data-messaging-field-label] {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+:root.dark [data-messaging-field] [data-messaging-field-label] {
+  color: var(--ui-text-primary);
+}
+
+[data-messaging-field] [data-messaging-field-help] {
+  font-size: 13px;
+  line-height: 1.4;
+  color: #64748b;
+}
+
+[data-messaging-field] input {
+  height: 2.625rem;
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  background: #f7f9fc;
+  box-shadow: none;
+}
+
+:root.dark [data-messaging-field] input {
+  border-color: var(--ui-stroke-tertiary);
+  background: var(--ui-bg-quinary);
+}
+
+[data-messaging-page] main > footer {
+  border-top: 1px solid #e2e8f0;
+  background: #fff;
+  padding-block: 0.9rem;
+}
+
+:root.dark [data-messaging-page] main > footer {
+  border-top-color: var(--ui-stroke-tertiary);
+  background: var(--ui-chat-surface-background);
+}
+
+[data-messaging-page] main > footer [data-slot='switch'][data-state='checked'] {
+  border-color: transparent;
+  background: #7c3aed;
+}
+
+[data-messaging-page] main > footer [data-messaging-enable-label] {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+:root.dark [data-messaging-page] main > footer [data-messaging-enable-label] {
+  color: var(--ui-text-primary);
+}
